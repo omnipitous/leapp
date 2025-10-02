@@ -4,11 +4,12 @@ import { INativeService } from "../interfaces/i-native-service";
 const cryptoJS = require("crypto-js");
 
 export class FileService {
+  fetchingWorkspacePassword = false;
   private readSubscription: Subscription;
   private _aesKey: string;
 
   constructor(private nativeService: INativeService) {
-    this.aesKey = this.nativeService.machineId;
+    this._aesKey = this.nativeService.machineId;
   }
 
   get aesKey(): string {
@@ -171,6 +172,10 @@ export class FileService {
    * Encrypt Text
    */
   encryptText(text: string): string {
+    //throw new Error("encrypt error");
+    const stack = new Error().stack;
+    console.log("Call stack:", stack);
+    console.log("Encrypting with key: " + this.aesKey);
     return cryptoJS.AES.encrypt(text.trim(), this.aesKey).toString();
   }
 
@@ -178,6 +183,10 @@ export class FileService {
    * Decrypt Text
    */
   decryptText(text: string): string {
+    //throw new Error("decrypt error");
+    const stack = new Error().stack;
+    console.log("Call stack:", stack);
+    console.log("Decrypting with key: " + this.aesKey);
     return cryptoJS.AES.decrypt(text.trim(), this.aesKey).toString(cryptoJS.enc.Utf8);
   }
 }

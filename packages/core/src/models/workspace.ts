@@ -55,6 +55,8 @@ export class Workspace {
 
   private _ssmRegionBehaviour: string;
 
+  private _workspacePasswordEnabled: boolean;
+
   private _workspaceVersion: number;
 
   constructor() {
@@ -88,6 +90,8 @@ export class Workspace {
     this._samlRoleSessionDuration = constants.samlRoleSessionDuration;
 
     this._ssmRegionBehaviour = constants.ssmRegionNo;
+
+    this._workspacePasswordEnabled = false;
   }
 
   setNewWorkspaceVersion(): void {
@@ -272,5 +276,13 @@ export class Workspace {
 
   set touchIdEnabled(value: boolean) {
     this._touchIdEnabled = value;
+  }
+
+  get workspacePasswordEnabled(): boolean {
+    return this._workspacePasswordEnabled;
+  }
+
+  set workspacePasswordEnabled(value: boolean) {
+    this._workspacePasswordEnabled = value;
   }
 }

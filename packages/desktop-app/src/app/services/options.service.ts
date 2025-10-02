@@ -170,4 +170,15 @@ export class OptionsService {
     workspace.touchIdEnabled = value;
     this.workspaceService.persistWorkspace(workspace);
   }
+
+  get workspacePasswordEnabled(): boolean {
+    const workspace = this.workspaceService.getWorkspace();
+    return workspace.workspacePasswordEnabled;
+  }
+
+  set workspacePasswordEnabled(value: boolean) {
+    const workspace = this.workspaceService.getWorkspace();
+    workspace.workspacePasswordEnabled = value;
+    this.workspaceService.persistWorkspace(workspace);
+  }
 }

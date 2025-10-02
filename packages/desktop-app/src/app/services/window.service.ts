@@ -7,6 +7,7 @@ import { IOpenExternalUrlService } from "@noovolari/leapp-core/interfaces/i-open
 import { AppProviderService } from "./app-provider.service";
 import { LoggedEntry, LogLevel } from "@noovolari/leapp-core/services/log-service";
 import { AuthorizationDialogComponent } from "../components/dialogs/authorization-dialog/authorization-dialog.component";
+import { WorkspacePasswordDialogComponent } from "../components/dialogs/workspace-password-dialog/workspace-password-dialog.component";
 
 @Injectable({
   providedIn: "root",
@@ -104,6 +105,36 @@ export class WindowService implements IOpenExternalUrlService {
       animated: false,
       class: "confirm-modal",
       initialState: { authorizationCode },
+    });
+  }
+
+  // workspacePasswordDialog(): Promise<void> {
+  //   return new Promise((resolve) => {
+  //     for (let i = 1; i <= this.modalService.getModalsCount(); i++) {
+  //       this.modalService.hide(i);
+  //     }
+  //     this.getCurrentWindow().show();
+  //     this.modalService.show(WorkspacePasswordDialogComponent, {
+  //       animated: false,
+  //       initialState: {
+  //         callback: () => resolve(),
+  //       },
+  //     });
+  //   });
+  // }
+
+  workspacePasswordDialog(): void {
+    for (let i = 1; i <= this.modalService.getModalsCount(); i++) {
+      this.modalService.hide(i);
+    }
+    this.getCurrentWindow().show();
+    this.modalService.show(WorkspacePasswordDialogComponent, {
+      animated: false,
+      backdrop: "static",
+      keyboard: false,
+      initialState: {
+        callback: () => {},
+      },
     });
   }
 

@@ -32,6 +32,7 @@ export class WorkspaceConsistencyService {
       const workspace = this.loadWorkspace();
       this.checkConsistency(workspace);
       if (this.workspaceFileName === constants.lockFileDestination) {
+        this.logService.log(new LoggedEntry("Backup workspace", this, LogLevel.info, false));
         this.saveBackup(workspace);
       }
       return workspace;

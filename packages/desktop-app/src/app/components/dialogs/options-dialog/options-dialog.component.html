@@ -10,7 +10,21 @@
 
       <div class="panel">
 
-        <ng-container *ngIf="appService.detectOs() === eOperatingSystem.mac">
+        <ng-container>
+          <h2>Security</h2>
+
+           <div class="form-container">
+            <div class="form-group">
+              <div class="form-field">
+                <label>Workspace password</label>
+                <input formControlName="workspacePassword" type="password" class="form-control" style="width: 66%;" placeholder="Workspace password" [value]="workspacePassword">
+                <mat-checkbox class="touch-id-enable-checkbox" formControlName="workspacePasswordEnableSelect" [(ngModel)]="workspacePasswordEnabled" (change)="resetWorkspacePasswordInputValue()"></mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!--<ng-container *ngIf="appService.detectOs() === eOperatingSystem.mac">
           <h2>Security</h2>
 
           <div class="form-container">
@@ -37,7 +51,7 @@
               </div>
             </div>
           </div>
-        </ng-container>
+        </ng-container>-->
         <ng-container *ngIf="isUserSignedIn">
           <div class="form-container">
             <div class="form-group">
@@ -176,7 +190,7 @@
 
             <div class="form-field">
               <label>Password</label>
-              <input formControlName="proxyPassword" type="password" class="form-control" placeholder="Proxy Password" [value]="proxyPassword">
+              <input formControlName="proxyPassword" type="password" class="form-control" placeholder="Configuration Password" [value]="configurationPassword">
             </div>
           </div>
         </div>

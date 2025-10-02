@@ -21,7 +21,7 @@ export class UpdaterService {
   bsModalRef: BsModalRef;
   markdown: any;
 
-  private behaviouralSubjectService: BehaviouralSubjectService;
+  private _behaviouralSubjectService: BehaviouralSubjectService;
 
   constructor(
     private bsModalService: BsModalService,
@@ -31,7 +31,14 @@ export class UpdaterService {
     private leappCoreService: AppProviderService
   ) {
     this.markdown = md();
-    this.behaviouralSubjectService = leappCoreService.behaviouralSubjectService;
+    //this.behaviouralSubjectService = leappCoreService.behaviouralSubjectService;
+  }
+
+  get behaviouralSubjectService(): BehaviouralSubjectService {
+    if (!this._behaviouralSubjectService) {
+      this._behaviouralSubjectService = this.leappCoreService.behaviouralSubjectService;
+    }
+    return this._behaviouralSubjectService;
   }
 
   isUpdateNeeded(): boolean {

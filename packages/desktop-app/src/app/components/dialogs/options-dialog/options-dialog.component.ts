@@ -47,6 +47,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   eOperatingSystem = OperatingSystem;
   eBillingPeriod = BillingPeriod;
 
+  configurationPassword: string;
+
   awsProfileValue: { id: string; name: string };
   idpUrlValue;
   editingIdpUrl: boolean;
@@ -77,6 +79,9 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   selectedSsmRegionBehaviour: string;
   selectedPeriod: BillingPeriod = BillingPeriod.yearly;
 
+  workspacePasswordEnabled: boolean;
+  workspacePassword: string;
+
   form = new FormGroup({
     idpUrl: new FormControl(""),
     awsProfile: new FormControl(""),
@@ -97,6 +102,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     ssmRegionBehaviourSelect: new FormControl(""),
     requirePasswordSelect: new FormControl(""),
     touchIdEnableSelect: new FormControl(""),
+    workspacePasswordEnableSelect: new FormControl(""),
+    workspacePassword: new FormControl(""),
   });
 
   selectedCredentialMethod: string;
@@ -143,6 +150,10 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.exporting = false;
 
     this.isUserSignedIn = false;
+
+    this.workspacePasswordEnabled = this.optionsService.workspacePasswordEnabled || false;
+
+    this.form.controls["workspacePassword"].setValue(this.optionsService.workspacePasswordEnabled ? this.appProviderService.fileService.aesKey : "");
   }
 
   ngOnDestroy(): void {
@@ -261,6 +272,30 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.optionsService.touchIdEnabled = (this.form.controls["touchIdEnableSelect"].value as any) === true;
 
       this.optionsService.ssmRegionBehaviour = this.selectedSsmRegionBehaviour;
+
+      this.optionsService.workspacePasswordEnabled = (this.form.controls["workspacePasswordEnableSelect"].value as any) === true;
+      if (this.optionsService.workspacePasswordEnabled) {
+        if (
+          this.form.controls["workspacePassword"].value &&
+          this.form.controls["workspacePassword"].value !== undefined &&
+          this.form.controls["workspacePassword"].value !== null &&
+          this.form.controls["workspacePassword"].value !== ""
+        ) {
+          await this.appProviderService.keychainService.saveSecret(
+            "Leapp",
+            constants.workspacePasswordKeychainKey,
+            this.form.controls["workspacePassword"].value
+          );
+          const workspace = this.appProviderService.workspaceService.getWorkspace();
+          this.appProviderService.fileService.aesKey = this.form.controls["workspacePassword"].value;
+          this.appProviderService.workspaceService.persistWorkspace(workspace);
+        }
+      } else {
+        await this.appProviderService.keychainService.deleteSecret("Leapp", constants.workspacePasswordKeychainKey);
+        const workspace = this.appProviderService.workspaceService.getWorkspace();
+        this.appProviderService.fileService.aesKey = this.appNativeService.machineId;
+        this.appProviderService.workspaceService.persistWorkspace(workspace);
+      }
 
       if (this.checkIfNeedDialogBox()) {
         // eslint-disable-next-line max-len
@@ -608,5 +643,11 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       setTimeout(resolve, 2000);
     });
     this.exporting = false;
+  }
+
+  resetWorkspacePasswordInputValue(): void {
+    if (!this.form.controls["workspacePasswordEnableSelect"].value) {
+      this.form.controls["workspacePassword"].setValue("");
+    }
   }
 }

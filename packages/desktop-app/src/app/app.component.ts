@@ -77,29 +77,49 @@ export class AppComponent implements OnInit {
     appProviderService.awsAuthenticationService = awsAuthenticationService;
     appProviderService.verificationWindowService = verificationWindowService;
     appProviderService.windowService = windowService;
+  }
 
-    this.fileService = appProviderService.fileService;
-    this.awsCoreService = appProviderService.awsCoreService;
-    this.loggingService = appProviderService.logService;
-    this.timerService = appProviderService.timerService;
-    this.sessionServiceFactory = appProviderService.sessionFactory;
-    this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
-    this.retroCompatibilityService = appProviderService.retroCompatibilityService;
-    this.rotationService = appProviderService.rotationService;
-    this.awsSsoIntegrationService = appProviderService.awsSsoIntegrationService;
-    this.awsSsoRoleService = appProviderService.awsSsoRoleService;
-    this.remoteProceduresServer = appProviderService.remoteProceduresServer;
-    this.integrationIsOnlineStateRefreshService = appProviderService.integrationIsOnlineStateRefreshService;
-    this.azureSessionService = appProviderService.azureSessionService;
-    this.azureCoreService = appProviderService.azureCoreService;
-    this.pluginManagerService = appProviderService.pluginManagerService;
-    this.teamService = appProviderService.teamService;
+  async init(): Promise<void> {
+    this.fileService = this.appProviderService.fileService;
+
+    // Check if we have a password saved in the system keychain
+    // If not, we force the user to set one before doing anything else
+    // in order to have all the workspace data encrypted at rest
+    // this.appProviderService.workspaceService.getWorkspace();
+    // const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
+    // if (workspacePassword === null) {
+    //   this.windowService.workspacePasswordDialog();
+    // }
+    console.log("Setting workspace password from keychain");
+    const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
+    if (workspacePassword) {
+      this.fileService.aesKey = workspacePassword;
+      console.log("aes key: " + this.fileService.aesKey);
+    }
+
+    this.awsCoreService = this.appProviderService.awsCoreService;
+    this.loggingService = this.appProviderService.logService;
+    this.timerService = this.appProviderService.timerService;
+    this.sessionServiceFactory = this.appProviderService.sessionFactory;
+    this.behaviouralSubjectService = this.appProviderService.behaviouralSubjectService;
+    this.retroCompatibilityService = this.appProviderService.retroCompatibilityService;
+    this.rotationService = this.appProviderService.rotationService;
+    this.awsSsoIntegrationService = this.appProviderService.awsSsoIntegrationService;
+    this.awsSsoRoleService = this.appProviderService.awsSsoRoleService;
+    this.remoteProceduresServer = this.appProviderService.remoteProceduresServer;
+    this.integrationIsOnlineStateRefreshService = this.appProviderService.integrationIsOnlineStateRefreshService;
+    this.azureSessionService = this.appProviderService.azureSessionService;
+    this.azureCoreService = this.appProviderService.azureCoreService;
+    this.pluginManagerService = this.appProviderService.pluginManagerService;
+    this.teamService = this.appProviderService.teamService;
 
     this.setInitialColorSchema();
     this.setColorSchemaChangeEventListener();
   }
 
   async ngOnInit(): Promise<void> {
+    await this.init();
+
     this.awsSsoRoleService.setAwsIntegrationDelegate(this.awsSsoIntegrationService);
 
     // We get the right moment to set an hook to app close

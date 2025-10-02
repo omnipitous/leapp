@@ -44,14 +44,34 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
     private windowService: WindowService,
     private messageToasterService: MessageToasterService,
     private appProviderService: AppProviderService
-  ) {
-    this.awsCoreService = appProviderService.awsCoreService;
-    this.loggingService = appProviderService.logService;
-    this.sessionServiceFactory = appProviderService.sessionFactory;
-    this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
+  ) {}
+
+  async init(): Promise<void> {
+    const fileService = this.appProviderService.fileService;
+
+    // Check if we have a password saved in the system keychain
+    // If not, we force the user to set one before doing anything else
+    // in order to have all the workspace data encrypted at rest
+    // this.appProviderService.workspaceService.getWorkspace();
+    // const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
+    // if (workspacePassword === null) {
+    //   this.windowService.workspacePasswordDialog();
+    // }
+    console.log("Setting workspace password from keychain");
+    const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
+    if (workspacePassword) {
+      fileService.aesKey = workspacePassword;
+      console.log("aes key: " + fileService.aesKey);
+    }
+
+    this.awsCoreService = this.appProviderService.awsCoreService;
+    this.loggingService = this.appProviderService.logService;
+    this.sessionServiceFactory = this.appProviderService.sessionFactory;
+    this.behaviouralSubjectService = this.appProviderService.behaviouralSubjectService;
   }
 
   async ngOnInit(): Promise<void> {
+    await this.init();
     this.subscribed = this.behaviouralSubjectService.sessions$.subscribe(() => {
       this.generateMenu();
     });

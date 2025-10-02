@@ -65,6 +65,7 @@ import { LockPageComponent } from "./lock-page/lock-page.component";
 import { CheckIconSvgComponent } from "./check-icon-svg/check-icon-svg.component";
 import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/authorization-dialog.component";
 import { NoovolariDialogComponent } from "./dialogs/noovolari-dialog/noovolari-dialog.component";
+import { WorkspacePasswordDialogComponent } from "./dialogs/workspace-password-dialog/workspace-password-dialog.component";
 
 @NgModule({
   declarations: [
@@ -103,6 +104,7 @@ import { NoovolariDialogComponent } from "./dialogs/noovolari-dialog/noovolari-d
     LockPageComponent,
     CheckIconSvgComponent,
     NoovolariDialogComponent,
+    WorkspacePasswordDialogComponent,
   ],
   imports: [
     CommonModule,
