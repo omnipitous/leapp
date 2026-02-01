@@ -173,9 +173,9 @@ export class FileService {
    */
   encryptText(text: string): string {
     //throw new Error("encrypt error");
-    const stack = new Error().stack;
-    console.log("Call stack:", stack);
-    console.log("Encrypting with key: " + this.aesKey);
+    //const stack = new Error().stack;
+    //console.log("Call stack:", stack);
+    //console.log("Encrypting with key: " + this.aesKey);
     return cryptoJS.AES.encrypt(text.trim(), this.aesKey).toString();
   }
 
@@ -184,9 +184,9 @@ export class FileService {
    */
   decryptText(text: string): string {
     //throw new Error("decrypt error");
-    const stack = new Error().stack;
-    console.log("Call stack:", stack);
-    console.log("Decrypting with key: " + this.aesKey);
+    //const stack = new Error().stack;
+    //console.log("Call stack:", stack);
+    //console.log("Decrypting with key: " + this.aesKey);
     return cryptoJS.AES.decrypt(text.trim(), this.aesKey).toString(cryptoJS.enc.Utf8);
   }
 }

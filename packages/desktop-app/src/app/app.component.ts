@@ -94,7 +94,7 @@ export class AppComponent implements OnInit {
     const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
     if (workspacePassword) {
       this.fileService.aesKey = workspacePassword;
-      console.log("aes key: " + this.fileService.aesKey);
+      //console.log("aes key: " + this.fileService.aesKey);
     }
 
     this.awsCoreService = this.appProviderService.awsCoreService;

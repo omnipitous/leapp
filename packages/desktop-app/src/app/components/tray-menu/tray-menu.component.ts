@@ -61,7 +61,7 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
     const workspacePassword = await this.appProviderService.keychainService.getSecret(constants.appName, constants.workspacePasswordKeychainKey);
     if (workspacePassword) {
       fileService.aesKey = workspacePassword;
-      console.log("aes key: " + fileService.aesKey);
+      //console.log("aes key: " + fileService.aesKey);
     }
 
     this.awsCoreService = this.appProviderService.awsCoreService;
