@@ -1,6 +1,10 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 
+const remoteMain = require("@electron/remote/main");
+
+remoteMain.initialize();
+
 const createMainWindow = () => {
   const window = new BrowserWindow({
     width: 1200,
@@ -15,6 +19,8 @@ const createMainWindow = () => {
       nodeIntegration: true,
     },
   });
+
+  remoteMain.enable(window.webContents);
 
   window.loadFile(join(__dirname, "../../../dist/leapp-client/index.html"));
 

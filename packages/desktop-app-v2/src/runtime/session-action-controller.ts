@@ -1,9 +1,11 @@
 import { FetchHttpHandler } from "@smithy/fetch-http-handler";
 import { SSO } from "@aws-sdk/client-sso";
 import type { INativeService } from "../../../core/src/interfaces/i-native-service";
+import { CloudProviderType } from "../../../core/src/models/cloud-provider-type";
 import { constants } from "../../../core/src/models/constants";
 import type { Session } from "../../../core/src/models/session";
 import { AwsCoreService } from "../../../core/src/services/aws-core-service";
+import { AwsSamlAssertionExtractionService } from "../../../core/src/services/aws-saml-assertion-extraction-service";
 import { AwsSsoOidcService } from "../../../core/src/services/aws-sso-oidc.service";
 import { BehaviouralSubjectService } from "../../../core/src/services/behavioural-subject-service";
 import { FileService } from "../../../core/src/services/file-service";
@@ -11,6 +13,7 @@ import { LogService } from "../../../core/src/services/log-service";
 import { Repository } from "../../../core/src/services/repository";
 import { AwsParentSessionFactory } from "../../../core/src/services/session/aws/aws-parent-session.factory";
 import { AwsIamRoleChainedService } from "../../../core/src/services/session/aws/aws-iam-role-chained-service";
+import { AwsIamRoleFederatedService } from "../../../core/src/services/session/aws/aws-iam-role-federated-service";
 import { AwsIamUserService } from "../../../core/src/services/session/aws/aws-iam-user-service";
 import { AwsSsoRoleService } from "../../../core/src/services/session/aws/aws-sso-role-service";
 import type { CreateSessionRequest } from "../../../core/src/services/session/create-session-request";
@@ -119,6 +122,179 @@ function createAwsSsoVerificationWindowService(nativeService: INativeService, ex
   };
 }
 
+function createAwsFederatedAuthenticationService(
+  nativeService: INativeService & { requireModule?: (moduleId: string) => any },
+  assertionExtractionService: AwsSamlAssertionExtractionService
+) {
+  const remote = nativeService.requireModule?.("@electron/remote");
+  const BrowserWindow = remote?.BrowserWindow;
+  const currentWindow = remote?.getCurrentWindow?.();
+  let authenticationWindow: any = null;
+
+  const ensureBrowserWindow = () => {
+    if (!BrowserWindow) {
+      throw new Error("Electron remote BrowserWindow is unavailable in the v2 renderer.");
+    }
+  };
+
+  const closeAuthenticationWindow = async () => {
+    if (!authenticationWindow) {
+      return;
+    }
+
+    try {
+      authenticationWindow.removeAllListeners?.();
+      authenticationWindow.close();
+    } catch {
+      // Ignore close races while the auth window is tearing down.
+    } finally {
+      authenticationWindow = null;
+    }
+  };
+
+  const createAuthenticationWindow = (targetUrl: string, show: boolean, title?: string) => {
+    ensureBrowserWindow();
+
+    const [currentX, currentY] = currentWindow?.getPosition?.() ?? [0, 0];
+    const nextWindow = new BrowserWindow({
+      width: 514,
+      height: 550,
+      resizable: true,
+      show,
+      title,
+      x: currentX + 250,
+      y: currentY + 100,
+      webPreferences: {
+        devTools: true,
+        worldSafeExecuteJavaScript: true,
+        partition: `persist:leapp-${btoa(targetUrl)}`,
+      },
+    });
+
+    nextWindow.setMenuBarVisibility?.(false);
+    nextWindow.removeMenu?.();
+    nextWindow.setMenu?.(null);
+    nextWindow.on("closed", () => {
+      if (authenticationWindow === nextWindow) {
+        authenticationWindow = null;
+      }
+    });
+
+    authenticationWindow = nextWindow;
+    return nextWindow;
+  };
+
+  return {
+    async needAuthentication(idpUrl: string): Promise<boolean> {
+      const trimmedUrl = idpUrl?.trim();
+      if (!trimmedUrl) {
+        throw new Error("The IdP URL is missing for this AWS federated session.");
+      }
+
+      const idpWindow = createAuthenticationWindow(trimmedUrl, false);
+
+      return new Promise<boolean>((resolve, reject) => {
+        let settled = false;
+        const timeout = window.setTimeout(() => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          void closeAuthenticationWindow();
+          reject(new Error("SAML authentication timeout exceeded."));
+        }, 5000);
+
+        idpWindow.webContents.session.webRequest.onBeforeRequest((details: any, callback: (response: { cancel: boolean }) => void) => {
+          if (settled) {
+            callback({ cancel: false });
+            return;
+          }
+
+          if (assertionExtractionService.isAuthenticationUrl(CloudProviderType.aws, details.url)) {
+            settled = true;
+            window.clearTimeout(timeout);
+            callback({ cancel: false });
+            void closeAuthenticationWindow();
+            resolve(true);
+            return;
+          }
+
+          if (assertionExtractionService.isSamlAssertionUrl(CloudProviderType.aws, details.url)) {
+            settled = true;
+            window.clearTimeout(timeout);
+            callback({ cancel: false });
+            void closeAuthenticationWindow();
+            resolve(false);
+            return;
+          }
+
+          callback({ cancel: false });
+        });
+
+        void idpWindow.loadURL(trimmedUrl).catch((error: Error) => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          window.clearTimeout(timeout);
+          void closeAuthenticationWindow();
+          reject(error);
+        });
+      });
+    },
+    async awsSignIn(idpUrl: string, needToAuthenticate: boolean): Promise<string> {
+      const trimmedUrl = idpUrl?.trim();
+      if (!trimmedUrl) {
+        throw new Error("The IdP URL is missing for this AWS federated session.");
+      }
+
+      const idpWindow = createAuthenticationWindow(trimmedUrl, needToAuthenticate, "IDP - Login");
+
+      return new Promise<string>((resolve, reject) => {
+        let settled = false;
+
+        idpWindow.webContents.session.webRequest.onBeforeRequest((details: any, callback: (response: { cancel: boolean }) => void) => {
+          if (settled) {
+            callback({ cancel: false });
+            return;
+          }
+
+          if (assertionExtractionService.isSamlAssertionUrl(CloudProviderType.aws, details.url)) {
+            settled = true;
+            callback({ cancel: true });
+
+            try {
+              const samlResponse = assertionExtractionService.extractAwsSamlResponse(details);
+              void closeAuthenticationWindow();
+              resolve(samlResponse);
+            } catch (error) {
+              void closeAuthenticationWindow();
+              reject(error);
+            }
+
+            return;
+          }
+
+          callback({ cancel: false });
+        });
+
+        void idpWindow.loadURL(trimmedUrl).catch((error: Error) => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          void closeAuthenticationWindow();
+          reject(error);
+        });
+      });
+    },
+    closeAuthenticationWindow,
+  };
+}
+
 class DesktopKeychainBridge {
   constructor(
     private readonly nativeService: INativeService & {
@@ -193,15 +369,21 @@ function createAwsCredentialFileServices({
   let initializedServices:
     | {
         iamUserService: AwsCredentialFileService;
+        iamRoleFederatedService: AwsCredentialFileService;
         iamRoleChainedService: AwsCredentialFileService;
         ssoRoleService: AwsCredentialFileService;
       }
     | null = null;
   let initializationError: Error | null = null;
 
-  const federatedCredentialFileReason =
-    "Direct credential-file generation for AWS federated auth is not ported in v2 yet. Section 4 still needs the auth window and verification UI.";
-  const chainedParentReason = "Chained credential-file generation in v2 currently requires an IAM user parent session.";
+  const federatedRuntimeReason = "AWS federated auth could not initialize in the current v2 renderer runtime.";
+  const chainedParentReason =
+    "Chained credential-file generation in v2 currently requires an IAM user, AWS federated, or AWS Identity Center parent session.";
+  const supportedChainedParentTypes = new Set([
+    sessionType.awsIamUser,
+    sessionType.awsIamRoleFederated,
+    sessionType.awsSsoRole,
+  ]);
 
   const ensureInitialized = () => {
     if (initializedServices) {
@@ -223,9 +405,16 @@ function createAwsCredentialFileServices({
 
       const keychainService = new DesktopKeychainBridge(nativeService as any, execFile as ExecFileFn);
       const mfaCodePrompter = createMfaCodePrompter();
-      const unsupportedParentService: any = {
+      const assertionExtractionService = new AwsSamlAssertionExtractionService();
+      const federatedAuthenticationService = createAwsFederatedAuthenticationService(nativeService, assertionExtractionService);
+      let ssoRoleService: AwsSsoRoleService | null = null;
+      const ssoParentService: Pick<AwsSsoRoleService, "generateCredentialsProxy"> = {
         async generateCredentialsProxy() {
-          throw new Error(chainedParentReason);
+          if (!ssoRoleService) {
+            throw new Error("AWS Identity Center runtime is not initialized in the current v2 renderer runtime.");
+          }
+
+          return ssoRoleService.generateCredentialsProxy(...arguments);
         },
       };
 
@@ -238,10 +427,18 @@ function createAwsCredentialFileServices({
         fileService,
         awsCoreService
       );
+      const iamRoleFederatedService = new AwsIamRoleFederatedService(
+        behaviouralSubjectService,
+        repository,
+        fileService,
+        awsCoreService,
+        federatedAuthenticationService,
+        repository.getWorkspace().samlRoleSessionDuration || constants.samlRoleSessionDuration
+      );
       const parentSessionFactory = new AwsParentSessionFactory(
         iamUserService,
-        unsupportedParentService,
-        unsupportedParentService
+        iamRoleFederatedService,
+        ssoParentService as AwsSsoRoleService
       );
       const iamRoleChainedService = new AwsIamRoleChainedService(
         behaviouralSubjectService,
@@ -252,7 +449,7 @@ function createAwsCredentialFileServices({
         parentSessionFactory
       );
       const awsSsoOidcService = new AwsSsoOidcService(createAwsSsoVerificationWindowService(nativeService, execFile as ExecFileFn) as any, repository, true);
-      const ssoRoleService = new AwsSsoRoleService(
+      ssoRoleService = new AwsSsoRoleService(
         behaviouralSubjectService,
         repository,
         fileService,
@@ -329,6 +526,7 @@ function createAwsCredentialFileServices({
 
       initializedServices = {
         iamUserService,
+        iamRoleFederatedService,
         iamRoleChainedService,
         ssoRoleService,
       };
@@ -354,13 +552,26 @@ function createAwsCredentialFileServices({
 
     try {
       const parentSession = repository.getSessionById(parentSessionId);
-      if (parentSession.type !== sessionType.awsIamUser) {
+      if (!supportedChainedParentTypes.has(parentSession.type)) {
         return {
           canStart: false,
           startReason: chainedParentReason,
           canStop: true,
           canRefresh: false,
           refreshReason: chainedParentReason,
+        };
+      }
+
+      const parentSupport = getSupport(parentSession);
+      if (!parentSupport.canStart || !parentSupport.canRefresh) {
+        const startReason = parentSupport.startReason ?? parentSupport.refreshReason ?? "The parent session is not ready for chained AWS credentials.";
+        const refreshReason = parentSupport.refreshReason ?? parentSupport.startReason ?? startReason;
+        return {
+          canStart: false,
+          startReason,
+          canStop: true,
+          canRefresh: false,
+          refreshReason,
         };
       }
     } catch {
@@ -417,6 +628,38 @@ function createAwsCredentialFileServices({
       return getChainedSupport(session);
     }
 
+    if (session.type === sessionType.awsIamRoleFederated) {
+      const idpUrlId = (session as Session & { idpUrlId?: string }).idpUrlId;
+      if (!idpUrlId) {
+        return {
+          canStart: false,
+          startReason: "The IdP URL is missing for this AWS federated session.",
+          canStop: true,
+          canRefresh: false,
+          refreshReason: "The IdP URL is missing for this AWS federated session.",
+        };
+      }
+
+      try {
+        repository.getIdpUrl(idpUrlId);
+        ensureInitialized();
+        return {
+          canStart: true,
+          canStop: true,
+          canRefresh: true,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : federatedRuntimeReason;
+        return {
+          canStart: false,
+          startReason: message,
+          canStop: true,
+          canRefresh: false,
+          refreshReason: message,
+        };
+      }
+    }
+
     if (session.type === sessionType.awsSsoRole) {
       const integrationId = (session as Session & { awsSsoConfigurationId?: string }).awsSsoConfigurationId;
       if (!integrationId) {
@@ -449,16 +692,6 @@ function createAwsCredentialFileServices({
       }
     }
 
-    if (session.type === sessionType.awsIamRoleFederated) {
-      return {
-        canStart: false,
-        startReason: federatedCredentialFileReason,
-        canStop: true,
-        canRefresh: false,
-        refreshReason: federatedCredentialFileReason,
-      };
-    }
-
     return {
       canStart: false,
       startReason: "This session type is not wired yet in the React dashboard.",
@@ -480,11 +713,15 @@ function createAwsCredentialFileServices({
       return services.iamRoleChainedService;
     }
 
+    if (session.type === sessionType.awsIamRoleFederated) {
+      return services.iamRoleFederatedService;
+    }
+
     if (session.type === sessionType.awsSsoRole) {
       return services.ssoRoleService;
     }
 
-    throw new Error(federatedCredentialFileReason);
+    throw new Error(federatedRuntimeReason);
   };
 
   return {
