@@ -27,7 +27,7 @@
     "@types/node-ipc": "9.2.0",
     "@types/uuid": "^8.3.0",
     "assert": "2.0.0",
-    "axios": "1.11.0",
+    "axios": "1.6.2",
     "chdir": "0.0.0",
     "class-transformer": "^0.4.0",
     "compare-versions": "^3.6.0",
@@ -36,7 +36,7 @@
     "date-fns": "^2.26.0",
     "es6-shim": "^0.35.6",
     "extract-zip": "~2.0.1",
-    "follow-redirects": "1.15.6",
+    "follow-redirects": "1.15.4",
     "fs-extra": "~9.1.0",
     "fs-web": "1.0.1",
     "http-proxy-agent": "4.0.1",
@@ -59,7 +59,7 @@
     "tar": "6.2.1",
     "tslib": "^2.3.1",
     "uuid": "~8.3.2",
-    "wait-on": "8.0.3"
+    "wait-on": "7.2.0"
   },
   "devDependencies": {
     "@aws-sdk/types": "3.523.0",
