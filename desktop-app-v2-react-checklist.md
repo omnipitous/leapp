@@ -10,6 +10,7 @@ Product decisions already taken for v2 frontend:
 - Pro and Team plan management is removed from scope.
 - Billing, subscription, workspace unlock, and related settings surfaces are removed from scope.
 - Cloud-provider authentication needed for actual session and integration flows stays in scope.
+- The active migration target is AWS. LocalStack is excluded from the current v2 target and Azure is deferred until the AWS path is working end to end.
 
 Out of scope for the initial v2 track:
 
@@ -36,9 +37,9 @@ Out of scope for the initial v2 track:
 
 ## Rollout Status
 
-- Current status: `section 2 completed`
-- Current section: `2. Runtime Adapters`
-- Last completed section check: `2. Runtime Adapters passed on 2026-05-15`
+- Current status: `section 3 completed, section 4 ready`
+- Current section: `4. Integrations And Cloud Authentication Flows`
+- Last completed section check: `3. Session Dashboard And Actions passed on 2026-05-15`
 
 ## 0. Scaffolding
 
@@ -119,36 +120,47 @@ Check before section 3:
 
 ## 3. Session Dashboard And Actions
 
-Goal: restore the primary daily workflow for browsing and operating sessions.
+Goal: restore the primary daily workflow for browsing and operating AWS sessions first.
 
-- [ ] Build the sessions list screen.
-- [ ] Port filtering, ordering, and search behavior.
-- [ ] Port session selection state and active session visuals.
-- [ ] Port contextual actions for start, stop, and refresh flows.
-- [ ] Port command bar and sidebar behavior needed by the main dashboard.
-- [ ] Reach feature parity for the core session lifecycle smoke paths.
+- [x] Build the sessions list screen.
+- [x] Port filtering, ordering, and search behavior.
+- [x] Port session selection state and active session visuals.
+- [x] Port contextual actions for start, stop, and refresh flows.
+- [x] Port command bar and sidebar behavior needed by the main dashboard.
+- [x] Move the section 3 AWS lifecycle path away from `credential_process` and back to in-app credential-file generation for supported AWS session types.
+- [x] Reach feature parity for the core session lifecycle smoke paths.
 
 Check before section 4:
 
-- [ ] Users can view sessions and integrations in the v2 dashboard.
-- [ ] Start and stop actions work on representative session types.
-- [ ] Filtering and selection behave correctly on smoke scenarios.
-- [ ] Check result recorded in the update log.
+- [x] Users can view AWS sessions and AWS integrations in the v2 dashboard.
+- [x] Start and stop actions work on representative AWS session types.
+- [x] Filtering and selection behave correctly on AWS smoke scenarios.
+- [x] Check result recorded in the update log.
 
 ## 4. Integrations And Cloud Authentication Flows
 
 Goal: restore the setup and cloud-provider authentication workflows that make the dashboard operational.
 
 - [ ] Port integrations list and edit flows.
-- [ ] Port AWS authentication flows.
+- [ ] Restore create, edit, and delete flows for AWS integrations.
+- [ ] Restore the remaining AWS authentication flows, with AWS federated auth as the first target.
+- [ ] Port the dedicated auth-window flow still required by AWS federated sessions.
+- [ ] Decide whether AWS SSO should stay on the current external-browser path or regain an in-app verification surface in v2.
 - [ ] Port Azure authentication flows.
-- [ ] Port MFA prompt flows.
-- [ ] Port verification windows and related UI entrypoints.
+- [ ] Port MFA prompt flows that still need richer UI than the current renderer prompt fallback.
+- [ ] Port verification-window and secondary auth UI entrypoints still missing outside the section 3 path.
 - [ ] Port plugin and deep-link UI entrypoints required by the current shell behavior.
+
+Section 4 working target:
+
+- Close AWS federated authentication first.
+- Do not regress IAM user or AWS Identity Center flows already validated in section 3.
+- Keep Azure deferred until the AWS federated path is working end to end.
 
 Check before section 5:
 
-- [ ] A representative AWS auth flow completes.
+- [ ] A representative AWS federated auth flow completes.
+- [ ] The previously validated AWS IAM user and AWS Identity Center flows still work after section 4 changes.
 - [ ] A representative Azure auth flow completes.
 - [ ] MFA and verification prompts render and return values correctly.
 - [ ] Check result recorded in the update log.
@@ -223,5 +235,13 @@ Check before completion:
 - `2026-05-15` Scope note: the distinction between removed app/account surfaces and retained cloud session setup is now tracked in this checklist and no longer represented as a frontend route or placeholder page.
 - `2026-05-15` Section 2 completed. Added a framework-agnostic runtime adapter in the v2 renderer that constructs `FileService`, `WorkspaceConsistencyService`, `Repository`, `WorkspaceService`, and `BehaviouralSubjectService` without Angular DI.
 - `2026-05-15` Section 2 check passed with: `cd packages/desktop-app-v2 && npm install && npm run build-dev`, `npm --prefix /Users/nico/Projects/beSharp/leapp/packages/desktop-app-v2 run run-local`, `npm run build-desktop-v2`, and a grep on `packages/desktop-app-v2/src` returning no matches for Angular service classes or imports.
-- `2026-05-15` Action-path note: the dashboard now triggers `refreshWorkspaceSnapshot()` on mount and exposes selection actions through the runtime adapter, so the renderer executes a real UI -> adapter -> core path during local boot.
+- `2026-05-15` Action-path note: the dashboard exposes selection and runtime actions directly from the React session workspace, so the renderer now executes real UI -> adapter -> core paths from list and sidebar interactions.
 - `2026-05-15` Build note: importing core source directly required local module-resolution aliases in the v2 package so core-source bare imports resolve to `packages/desktop-app-v2/node_modules` during Vite and TypeScript builds.
+- `2026-05-15` Section 3 implementation started. Replaced the placeholder dashboard with a real session workspace in React, including command-bar search/filter/order controls, selection sidebar, integration visibility, and action buttons wired to the v2 runtime adapter.
+- `2026-05-15` Section 3 validation in progress with: `cd packages/desktop-app-v2 && npm run build-dev` and `npm --prefix /Users/nico/Projects/beSharp/leapp/packages/desktop-app-v2 run run-local`. The section gate is still open until representative start/stop smoke checks are completed on a real workspace.
+- `2026-05-15` Scope update: LocalStack is removed from the active v2 migration target. Section 3 now focuses on AWS sessions and AWS integrations, while Azure remains deferred until the AWS path is closed.
+- `2026-05-15` Build/runtime stabilization: the v2 package now prefers `.ts` over adjacent legacy `.js` files from `packages/core/src` during renderer resolution, and the temporary main-process RPC bridge was removed again because the current section is no longer using CLI or `credential_process` as a dependency.
+- `2026-05-15` AWS lifecycle scope update: section 3 now uses in-app credential-file generation for AWS IAM user sessions, chained sessions with an IAM user parent, and AWS SSO role sessions. AWS federated start/refresh still remain deferred to section 4 because they still need the dedicated auth-window flow.
+- `2026-05-15` AWS SSO runtime update: the v2 dashboard now opens the AWS SSO verification URL in the external browser and completes OIDC polling in-renderer, so `awsSsoRole` start and refresh no longer stay pre-emptively disabled in section 3.
+- `2026-05-15` Section 3 validation continued with: `cd packages/desktop-app-v2 && npm run build-dev` and `npm --prefix /Users/nico/Projects/beSharp/leapp/packages/desktop-app-v2 run run-local`. The v2 build is green again and the Electron shell boots without the removed RPC bridge, but the representative AWS lifecycle smoke gate is still open until start/stop are exercised on a real workspace.
+- `2026-05-15` Section 3 check passed. User-confirmed smoke validation now covers IAM user and AWS Identity Center flows in the v2 dashboard, with filtering/list/selection already verified earlier in the session. Section 4 is now unlocked, while AWS federated remains explicitly deferred there.

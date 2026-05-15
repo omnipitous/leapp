@@ -6,7 +6,13 @@ export default defineConfig(({ mode }) => ({
   base: "./",
   plugins: [react()],
   resolve: {
+    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: {
+      "@aws-sdk/client-sso": fileURLToPath(new URL("./node_modules/@aws-sdk/client-sso", import.meta.url)),
+      "@aws-sdk/client-sso-oidc": fileURLToPath(new URL("./node_modules/@aws-sdk/client-sso-oidc", import.meta.url)),
+      "@aws-sdk/client-sts": fileURLToPath(new URL("./node_modules/@aws-sdk/client-sts", import.meta.url)),
+      "@smithy/fetch-http-handler": fileURLToPath(new URL("./node_modules/@smithy/fetch-http-handler", import.meta.url)),
+      "@smithy/protocol-http": fileURLToPath(new URL("./node_modules/@smithy/protocol-http", import.meta.url)),
       "class-transformer": fileURLToPath(new URL("./node_modules/class-transformer", import.meta.url)),
       "crypto-js": fileURLToPath(new URL("./node_modules/crypto-js", import.meta.url)),
       "node-ipc": fileURLToPath(new URL("./node_modules/node-ipc", import.meta.url)),
