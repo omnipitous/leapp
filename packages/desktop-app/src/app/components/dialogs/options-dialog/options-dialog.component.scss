@@ -256,10 +256,29 @@
   }
 }
 
+.workspace-password-input-type-toggle {
+  color: $text-color !important;
+  position: relative;
+  right: 35px;
+}
+
+.workspace-password-input-type-toggle-slash {
+  color: $text-color !important;
+  position: relative;
+  right: 36px;
+}
 
 .dark-theme {
   .cta-label {
     color: white !important;
+  }
+
+  .workspace-password-input-type-toggle {
+    color: $white-text-color !important;
+  }
+
+  .workspace-password-input-type-toggle-slash {
+    color: $white-text-color !important;
   }
 }
 
@@ -686,7 +705,14 @@
 
 .touch-id-enable-checkbox {
   position: relative;
-  top: 3px;
+  right: 35px;
+  top: -2px;
+}
+
+.touch-id-enable-checkbox-slash {
+  position: relative;
+  right: 37px;
+  top: -2px;
 }
 
 .mat-tab-body {

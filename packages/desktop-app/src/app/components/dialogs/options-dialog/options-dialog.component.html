@@ -17,8 +17,9 @@
             <div class="form-group">
               <div class="form-field">
                 <label>Workspace password</label>
-                <input formControlName="workspacePassword" type="password" class="form-control" style="width: 66%;" placeholder="Workspace password" [value]="workspacePassword">
-                <mat-checkbox class="touch-id-enable-checkbox" formControlName="workspacePasswordEnableSelect" [(ngModel)]="workspacePasswordEnabled" (change)="resetWorkspacePasswordInputValue()"></mat-checkbox>
+                <input formControlName="workspacePassword" [type]="getWorkspacePasswordInputType()" class="form-control" style="width: 60%; padding-right: 36px;" placeholder="Workspace password" [value]="workspacePassword">
+                &nbsp;<i [class]="getWorkspacePasswordInputTypeToggleClass()" (click)="toggleWorkspacePasswordInputType()"></i>
+                &nbsp;<mat-checkbox [class]="getWorkspacePasswordEnableSelectClass()" formControlName="workspacePasswordEnableSelect" [(ngModel)]="workspacePasswordEnabled" (change)="resetWorkspacePasswordInputValue()"></mat-checkbox>
               </div>
             </div>
           </div>

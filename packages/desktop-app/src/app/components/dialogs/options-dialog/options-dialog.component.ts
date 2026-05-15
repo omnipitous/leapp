@@ -119,6 +119,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   isUserSignedIn: boolean;
   signedInUserStateSubscription: Subscription;
 
+  workspacePasswordInputType: string;
+
   /* Simple profile page: shows the Idp Url and the workspace json */
   private sessionService: SessionService;
 
@@ -154,6 +156,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.workspacePasswordEnabled = this.optionsService.workspacePasswordEnabled || false;
 
     this.form.controls["workspacePassword"].setValue(this.optionsService.workspacePasswordEnabled ? this.appProviderService.fileService.aesKey : "");
+
+    this.workspacePasswordInputType = "password";
   }
 
   ngOnDestroy(): void {
@@ -648,6 +652,34 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   resetWorkspacePasswordInputValue(): void {
     if (!this.form.controls["workspacePasswordEnableSelect"].value) {
       this.form.controls["workspacePassword"].setValue("");
+    }
+  }
+
+  toggleWorkspacePasswordInputType(): void {
+    if (this.workspacePasswordInputType === "password") {
+      this.workspacePasswordInputType = "text";
+    } else if (this.workspacePasswordInputType === "text") {
+      this.workspacePasswordInputType = "password";
+    }
+  }
+
+  getWorkspacePasswordInputType(): string {
+    return this.workspacePasswordInputType;
+  }
+
+  getWorkspacePasswordInputTypeToggleClass(): string {
+    if (this.workspacePasswordInputType === "password") {
+      return "fa fa-eye workspace-password-input-type-toggle";
+    } else if (this.workspacePasswordInputType === "text") {
+      return "fa fa-eye-slash workspace-password-input-type-toggle-slash";
+    }
+  }
+
+  getWorkspacePasswordEnableSelectClass(): string {
+    if (this.workspacePasswordInputType === "password") {
+      return "touch-id-enable-checkbox";
+    } else if (this.workspacePasswordInputType === "text") {
+      return "touch-id-enable-checkbox-slash";
     }
   }
 }
