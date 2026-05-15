@@ -1,0 +1,51 @@
+
+$ npm install @aws-sdk/util-retry@3.370.0
+
+added 2 packages, removed 2 packages, changed 1 package, and audited 1538 packages in 8s
+
+200 packages are looking for funding
+  run `npm fund` for details
+
+40 vulnerabilities (14 low, 9 moderate, 16 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+$ npm install @types/node-ipc@9.2.3
+
+changed 1 package, and audited 1538 packages in 2s
+
+200 packages are looking for funding
+  run `npm fund` for details
+
+40 vulnerabilities (14 low, 9 moderate, 16 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+$ npm install gushio@0.7.5
+
+added 74 packages, removed 65 packages, changed 97 packages, and audited 1547 packages in 7s
+
+205 packages are looking for funding
+  run `npm fund` for details
+
+28 vulnerabilities (14 low, 9 moderate, 4 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
