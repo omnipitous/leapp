@@ -1,0 +1,7 @@
+Command chosen: npm run clean
+
+> @noovolari/leapp-core@0.1.165 clean
+> gushio gushio/target-clean.js
+
+Performing cleanup... 
+Cleanup completed successfully

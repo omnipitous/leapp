@@ -1,0 +1,13 @@
+{
+  "operation": "test",
+  "path": "packages/core",
+  "command": "npm run test",
+  "start": "2026-05-15T16:45:01Z",
+  "end": "2026-05-15T16:45:10Z",
+  "exit_code": 0,
+  "duration_seconds": 9,
+  "env": { "node": "v25.2.1", "npm": "11.11.1", "os": "Darwin FatTony.local 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:48:41 PST 2026; root:xnu-12377.81.4~5/RELEASE_ARM64_T6041 arm64" },
+  "tests": { "total": 68, "passed": 68, "failed": null },
+  "coverage": { "statements": 92.66 },
+  "artifacts": [".logs/test-2026-05-15T16-45-01Z.log"]
+}

@@ -1,0 +1,9 @@
+Command chosen: npm run build
+
+> @noovolari/leapp-core@0.1.165 build
+> gushio gushio/target-build.js
+
+Performing cleanup... 
+Cleanup completed successfully
+Building leapp-core library... 
+Build completed successfully

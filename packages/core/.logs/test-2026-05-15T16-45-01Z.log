@@ -1,0 +1,1168 @@
+Command chosen: npm run test
+
+> @noovolari/leapp-core@0.1.165 test
+> jest --coverage
+
+PASS src/plugin-sdk/plugin-manager-service.spec.ts
+  PluginManagerService
+    ✓ base64Decoding (1 ms)
+    ✓ pluginContainers
+    ✓ getPluginByName (1 ms)
+    ✓ verifyAndGeneratePluginFolderIfMissing
+    ✓ loadFromPluginDir (7 ms)
+    ✓ loadFromPluginDir, extractMetadata throws an exception
+    ✓ loadFromPluginDir, invalid signature
+    ✓ loadFromPluginDir, invalid plugin code (1 ms)
+    ✓ unloadAllPlugins
+    ✓ unloadSinglePlugin
+    ✓ testRsaSignToBase64
+    ✓ availableAwsCredentialsPlugins (1 ms)
+    ✓ installPlugin
+    ✓ installPlugin, no leapp-plugin keyword
+    ✓ extractMetadata, success (1 ms)
+    ✓ validatePlugin, not hash children
+    ✓ validatePlugin, verify signature correctly
+    ✓ validatePlugin, verify signature fails
+    ✓ validatePlugin, no active plugin found
+    ✓ validatePlugin, not a plugin folder
+    ✓ validatePlugin, signature not verified (1 ms)
+    ✓ validatePlugin, hashing or verification failed
+    ✓ extractMetadata, throws an error about missing package.json entries (27 ms)
+    ✓ extractMetadata, throws an error about wrong/unspported session or operanting system
+    ✓ rsaVerifySignatureFromBase64
+    ✓ skipPluginValidation
+
+PASS src/services/session/azure/azure-session-service.spec.ts
+  AzureSessionService
+    ✓ getDependantSessions (1 ms)
+    ✓ create (1 ms)
+    ✓ update (23 ms)
+    ✓ getCloneRequest (1 ms)
+    ✓ rotate, token still valid (1 ms)
+    ✓ rotate, token should be rotated
+    ✓ stop, session already inactive
+    ✓ stop, 'az logout' command is executed when profile contains less than 2 subscriptions (1 ms)
+    ✓ stop, logService's log is called if an error is thrown inside try catch block
+    ✓ stop, when the default subscription is stopped, the first of the remaining subscriptions is set to default and persisted
+    ✓ stop, when there is <= 1 subscription in the profile, the AzureIntegration token expiration is set to undefined once 'az logout' is called (1 ms)
+    ✓ stop, sessionDeactivated is called once and the stopped session becomes inactive
+    ✓ start, with integration token not expired, one session available (1 ms)
+    ✓ start, with integration token expiration undefined
+    ✓ start, with integration token expired
+    ✓ start, with managed exception (8 ms)
+    ✓ delete, with active session
+    ✓ delete, with inactive session
+    ✓ delete, with exception handling (1 ms)
+    ✓ validateCredentials
+    ✓ restoreSecretsFromKeychain
+    ✓ restoreSecretsFromKeychain, error handling (1 ms)
+    ✓ moveRefreshTokenToKeychain (1 ms)
+    ✓ getAccessTokenExpiration
+    ✓ updateProfiles (1 ms)
+    ✓ stopAllOtherSessions
+    ✓ getNextRotationTime (1 ms)
+
+  console.log
+    Server path not specified, so defaulting to ipc.config.socketRoot + ipc.config.appspace + ipc.config.id /tmp/app.rpc_test4510.971561163317
+
+      at Object.log (node_modules/node-ipc/services/IPC.js:83:17)
+
+  console.log
+    starting server on  /tmp/app.rpc_test4510.971561163317
+
+      at Server.log (node_modules/node-ipc/services/IPC.js:83:17)
+
+  console.log
+    starting TLS server false
+
+      at Server.log (node_modules/node-ipc/services/IPC.js:83:17)
+
+  console.log
+    starting server as Unix || Windows Socket
+
+      at Server.log (node_modules/node-ipc/services/IPC.js:83:17)
+
+  console.log
+    no need to save access token
+
+      at console.<anonymous> (node_modules/jest-mock/build/index.js:854:25)
+
+PASS src/services/retro-compatibility-service.spec.ts
+  RetroCompatibilityService
+    ✓ integrationTypeEnumPatch, non empty case
+    ✓ integrationTypeEnumPatch, empty case (1 ms)
+    ✓ integrationTypeEnumPatch, missing integration keys
+    ✓ migration3, not needed (1 ms)
+    ✓ migration3, migrate to version 3 (1 ms)
+    ✓ migration4, not needed (1 ms)
+    ✓ migration4, migrate to version 4 (1 ms)
+    ✓ migration5, not needed
+    ✓ migration5, migrate to version 5
+    ✓ migration6, not needed
+    ✓ migration6, migrate to version 6 (1 ms)
+    ✓ migration7, not needed
+    ✓ migration7, migrate to version 7
+    ✓ adaptIntegrations (1 ms)
+    ✓ adaptIntegrations - throws an error (86 ms)
+    ✓ adaptIntegrationPatch (21 ms)
+    ✓ persists (6 ms)
+    applyWorkspaceMigrations
+      ✓ should skip migrations if lock file is not present (1 ms)
+      ✓ should try migrations if lock file is present (1 ms)
+      ✓ should try migrations, retropatch not necessary
+      ✓ should try migrations, integrationpatch not necessary
+    isIntegrationPatchNecessary
+      ✓ should return true if a specific key is not present in the file (1 ms)
+      ✓ should return true if there are ssoRole sessions but not sso integrations
+      ✓ should return false otherwise
+    migration1
+      ✓ should not migrate if _workspaceVersion is set
+      ✓ should migrate if _workspaceVersion is not set (1 ms)
+      ✓ should migrate but no integrations available
+    migration2
+      ✓ should not migrate if _workspaceVersion is not 1
+      ✓ should migrate (1 ms)
+
+PASS src/services/integration/azure-integration-service.spec.ts
+  AzureIntegrationService
+    ✓ validateAlias - empty alias (1 ms)
+    ✓ validateAlias - only spaces alias
+    ✓ validateAlias - valid alias (1 ms)
+    ✓ validateTenantId - empty alias (1 ms)
+    ✓ validateTenantId - only spaces alias (1 ms)
+    ✓ validateTenantId - valid alias
+    ✓ checkCliVersion, cli installed with version 2.30 (4 ms)
+    ✓ checkCliVersion, cli installed with version 2.31
+    ✓ checkCliVersion, cli installed with version 2.29 (27 ms)
+    ✓ checkCliVersion, cli with unknown version
+    ✓ checkCliVersion, cli not installed (1 ms)
+    ✓ createIntegration
+    ✓ updateIntegration
+    ✓ deleteIntegration
+    ✓ getIntegration
+    ✓ getIntegrations
+    ✓ syncSessions, if error in execute service with code 1 and stdoutput identifying integration we catch a specific error
+    ✓ syncSessions, if error in execute service with killed true we catch a specific error
+    ✓ syncSessions, if generic error in execute service we catch a generic error
+    ✓ syncSessions, no available azure local sessions, with another azure integration's session active
+    ✓ syncSessions, active azure local session to keep (2 ms)
+    ✓ syncSessions, inactive azure local session to keep
+    ✓ syncSessions, azure local session to delete (1 ms)
+    ✓ syncSessions, deleteDependentSessions method is called once if 'ERROR: No subscriptions found for' was catched in the 'az login' command stdout
+    ✓ syncSessions, timeout error is raised if 'az login' command raised error with code === null and killed === true
+    ✓ setOnline, is online, forcedState (1 ms)
+    ✓ setOnline, is not online, forcedState
+    ✓ setOnline, is online, without forcedState
+    ✓ setOnline, is not online, without forcedState
+    ✓ logout, integration is offline
+    ✓ logout, integration is online
+    ✓ remainingHours
+    ✓ notifyIntegrationChanges
+    ✓ moveSecretsToKeychain
+    ✓ deleteDependentSessions (1 ms)
+
+PASS src/services/session/localstack/localstack-session-service.spec.ts
+  LocalstackSessionService
+    ✓ create - sessionId undefined (5 ms)
+    ✓ create - sessionId not undefined (1 ms)
+    ✓ applyCredentials
+    ✓ generateProcessCredentials (26 ms)
+    ✓ deApplyCredentials (2 ms)
+    ✓ getCloneRequest
+    ✓ getDependantSessions
+    ✓ validateCredentials
+    ✓ generateCredentials
+    ✓ validateCredentials (1 ms)
+    ✓ isThereAnotherPendingSessionWithSameNamedProfile - true if another session with the same name profile is pending
+    ✓ isThereAnotherPendingSessionWithSameNamedProfile - false if another session with different name profile is pending (1 ms)
+    ✓ stopAllWithSameNameProfile - stop active sessions with the same name profile
+    ✓ deApplyConfigProfileCommand - success (2 ms)
+    ✓ start - credentials process not supported
+    ✓ start - fails if another session is in pending with the same name profile (1 ms)
+    ✓ start - calls sessionError if an error occurs during the process (5 ms)
+    ✓ start - will start your session (5 ms)
+    ✓ rotate
+    ✓ stop - stop an active session
+    ✓ stop - stop an inactive session
+    ✓ stop - credential process method
+    ✓ stop - throw and catch error
+    ✓ delete - delete an active session (1 ms)
+    ✓ delete - throw and catch error
+    update
+      repository.getSessionById
+        ✓ has been called once with the expected parameter
+      repository.updateSession
+        ✓ has been called once with the expected parameters
+      sessionNotifier.setSessions
+        ✓ has been called once with repository.getSessions result
+
+PASS src/services/session/aws/aws-session-service.spec.ts
+  AwsSessionService
+    ✓ should be created
+    ✓ getDependantSessions
+    ✓ start - fails if another session is in pending with the same name profile (20 ms)
+    ✓ start - calls sessionError if an error occurs during the process
+    ✓ start - will start your session
+    ✓ start - using credentialProcess
+    ✓ rotate - apply rotation by generating a new set of credentials
+    ✓ rotate - in credential process mode, rotation is not used
+    ✓ rotate - throw and catch error (1 ms)
+    ✓ stop - stop an active session
+    ✓ stop - stop an inactive session
+    ✓ stop - credential process method
+    ✓ stop - throw and catch error
+    ✓ delete - delete an active session
+    ✓ delete - throw and catch error
+    ✓ delete - no dependante active sessions to be stop
+    ✓ generateProcessCredentials - success (4 ms)
+    ✓ generateProcessCredentials - error if session is not an AWS one (1 ms)
+    ✓ applyConfigProfileCommand - success
+    ✓ applyConfigProfileCommand - throw and catch error
+    ✓ deApplyConfigProfileCommand - success
+    ✓ isThereAnotherPendingSessionWithSameNamedProfile - true if another session with the same name profile is pending (1 ms)
+    ✓ isThereAnotherPendingSessionWithSameNamedProfile - false if another session with different name profile is pending
+    ✓ stopAllWithSameNameProfile - stop active sessions with the same name profile (2 ms)
+
+PASS src/services/repository.spec.ts
+  Repository
+    ✓ get workspace() - returns the private workspace (5 ms)
+    ✓ set workspace() - set the private workspace (2 ms)
+    ✓ reloadWorkspace (2 ms)
+    ✓ createWorkspace() - create a new workspace (2 ms)
+    ✓ createWorkspace() - directory exists (3 ms)
+    ✓ removeWorkspace() - the workspace file exists (2 ms)
+    ✓ removeWorkspace() - the workspace file doesn't exists (2 ms)
+    ✓ getWorkspace() - workspace not set
+    ✓ getWorkspace() - workspace already set (2 ms)
+    ✓ persistWorkspace() - to save the new status of a workspace (8 ms)
+    ✓ getSessions() - get the sessions persisted in the workspace (13 ms)
+    ✓ getSessionById() - get a session give an ID (2 ms)
+    ✓ getSessionById() - session ID doesn't exist (89 ms)
+    ✓ addSession() - add a new session to the array of sessions (3 ms)
+    ✓ updateSession() - updates a specific session (2 ms)
+    ✓ updateSessions() - bulk updates all sessions at once
+    ✓ deleteSession() - remove a session from the array of sessions (2 ms)
+    ✓ deleteSession() - no session found
+    ✓ listPending() - list sessions in pending state (1 ms)
+    ✓ listActive() - list sessions in active state
+    ✓ listActiveAndPending() - with pending and active sessions  (1 ms)
+    ✓ listActiveAndPending() - without sessions key (1 ms)
+    ✓ listActiveAndPending() - without sessions length equal to 0 (1 ms)
+    ✓ listAwsSsoRoles() - list sessions of type AwsSsoRole
+    ✓ listAssumable() - list sessions of any type that can be assumed by AwsIamRoleChained
+    ✓ listIamRoleChained() - list sessions of type AwsIamRoleChained without parentSession argument (1 ms)
+    ✓ listIamRoleChained() - list sessions of type AwsIamRoleChained without sessions key
+    ✓ listIamRoleChained() - list sessions of type AwsIamRoleChained with session length equal to 0
+    ✓ listIamRoleChained() - list sessions of type AwsIamRoleChained with parentSession argument
+    ✓ getDefaultRegion() - default rigion property from workspace (1 ms)
+    ✓ getDefaultLocation() - default location property from workspace (2 ms)
+    ✓ updateDefaultRegion() - update default region property in workspace (1 ms)
+    ✓ updateDefaultLocation() - update default location property in workspace
+    ✓ getIdpUrl() - get saved idpUrl by id (1 ms)
+    ✓ getIdpUrls() - get saved idpUrls
+    ✓ addIdpUrl() - add a new IdpUrl (2 ms)
+    ✓ updateIdpUrl() - update a IdpUrl (1 ms)
+    ✓ updateIdpUrl() - idpUrl not found
+    ✓ removeIdpUrl() - update a IdpUrl
+    ✓ getProfiles() - get all profiles (1 ms)
+    ✓ getProfileName() - get a profile's name
+    ✓ doesProfileExists() - check if a profile is in the workspace (1 ms)
+    ✓ getDefaultProfileId() - get the standard default profile id
+    ✓ getDefaultProfileId() - no default named profile found (1 ms)
+    ✓ addProfile() - add a new profile to the workspace
+    ✓ updateProfile() - update a profile in the workspace (22 ms)
+    ✓ updateProfile() - profile not found
+    ✓ deleteProfile() - delete a profile in the workspace (1 ms)
+    ✓ listAwsSsoIntegrations() - get all the aws sso integration we have in the workspace
+    ✓ getAwsSsoIntegration() - get a specific integration given the id (1 ms)
+    ✓ getAwsSsoIntegrationSessions() - get a list of sessions for a specific integration given the id
+    ✓ addAwsSsoIntegration() - add a specific integration to the workspace (1 ms)
+    ✓ updateAwsSsoIntegration() - update a specific integration in the workspace
+    ✓ updateAwsSsoIntegration() - no integrations found (1 ms)
+    ✓ updateAwsSsoIntegration() - with expirationTime argument
+    ✓ unsetAwsSsoIntegrationExpiration() - put accessTokenExpiration to undefined
+    ✓ unsetAwsSsoIntegrationExpiration() - integration not found
+    ✓ deleteAwsSsoIntegration() - remove an integration from the workspace (1 ms)
+    ✓ deleteAwsSsoIntegration() - integration not found
+    ✓ listAzureIntegrations() - get all the azure integrations we have in the workspace (1 ms)
+    ✓ getAzureIntegration() - get a specific integration given the id
+    ✓ addAzureIntegration() - add a specific integration to the workspace (2 ms)
+    ✓ updateAzureIntegration() - update a specific integration in the workspace (1 ms)
+    ✓ updateAzureIntegration() - integration not found
+    ✓ deleteAzureIntegration() - remove an integration from the workspace (2 ms)
+    ✓ deleteAzureIntegration() - integration not found (1 ms)
+    ✓ getProxyConfiguration() - get the proxy config object from the workspace (1 ms)
+    ✓ updateProxyConfiguration() - update the proxy config object from the workspace (3 ms)
+    ✓ getSegments() - get all the segments from the workspace (1 ms)
+    ✓ getSegment() - get a specific segment from the workspace
+    ✓ setSegments() - set a new segment array of segments for the workspace (1 ms)
+    ✓ removeSegment() - remove a segment  from segments of the workspace (2 ms)
+    ✓ removeSegment() - segment not found (1 ms)
+    ✓ getFolders() - get the folders object from the workspace
+    ✓ setFolders() - set the folder array object for the workspace (1 ms)
+    ✓ updateMacOsTerminal() - set the terminal option for MacOs in the workspace (5 ms)
+    ✓ updateColorTheme() - set the color theme variable in the workspace (2 ms)
+    ✓ getColorTheme() - get the color theme variable in the workspace
+    ✓ createPluginStatus() - creates a new pluginStatus
+    ✓ getPluginStatus() - get the pluginStatus from a pluginId (1 ms)
+    ✓ setPluginStatus() - set the newStatus of a pluginStatus from a pluginId
+    ✓ writeFile
+    ✓ globalSettings, getter
+    ✓ globalSettings, setter
+    ✓ getNotifications() - returns the notification array
+    ✓ setNotifications() - set the notification array (1 ms)
+
+PASS src/services/idp-urls-service.spec.ts
+  IdpUrlsService
+    ✓ getIdpUrls (1 ms)
+    ✓ getIdpUrl, idpUrl exists
+    ✓ getIdpUrl, idpUrl doesn't exist
+    ✓ getIdpUrlIdByUrl, success
+    ✓ getIdpUrlIdByUrl, creates a new idpUrl
+    ✓ createIdpUrl
+    ✓ editIdpUrl
+    ✓ getDependantSessions, includingChained (1 ms)
+    ✓ getDependantSessions, not includingChained
+    ✓ deleteIdpUrl
+    ✓ getNewId
+    ✓ validateIdpUrl
+    ✓ validateIdpUrl, empty url (1 ms)
+    ✓ validateIdpUrl, whitespaces url
+    ✓ validateIdpUrl, existent url
+    ✓ validateIdpUrl, not a valid url
+
+PASS src/services/behavioural-subject-service.spec.ts
+  WorkspaceService
+    ✓ Should exists when created (2 ms)
+    ✓ get sessions() - retrieve sessions as Values from Behavioural Subject (1 ms)
+    ✓ getSessions() - retrieve sessions as Values from Behavioural Subject (1 ms)
+    ✓ set sessions() - set sessions as Values to Behavioural Subject
+    ✓ setSessions() - set sessions as Values to Behavioural Subject
+    ✓ getSessionById() - retrieve a session given its id
+    ✓ get integrations() - retrieve integrations as Values from Behavioural Subject
+    ✓ getIntegrations() - retrieve integrations as Values from Behavioural Subject (1 ms)
+    ✓ set integrations() - set integrations as Values to Behavioural Subject
+    ✓ setIntegrations() - set integrations as Values to Behavioural Subject
+    ✓ getIntegrationsById() - retrieve a integrations given its id
+    ✓ setSessions (1 ms)
+    ✓ setIntegrations
+    ✓ setFetchingIntegrations (1 ms)
+
+PASS src/plugin-sdk/plugin-environment.spec.ts
+  PluginEnvironment
+    ✓ PluginEnvironment, using cliNativeService as the providerService in the constructor (1 ms)
+    ✓ log
+    ✓ fetch
+    ✓ openExternalUrl
+    ✓ createSession
+    ✓ cloneSession (1 ms)
+    ✓ updateSession
+    ✓ openTerminal
+    ✓ generalCredentials
+
+PASS src/services/aws-saml-assertion-extraction-service.spec.ts
+  AwsSamlAssertionExtractionService
+    ✓ isAuthenticationUrl (1 ms)
+    ✓ isSamlAssertionUrl
+    ✓ extractAwsSamlResponse
+    ✓ extractAwsSamlResponse - 2 (1 ms)
+    ✓ extractAwsSamlResponse - error (4 ms)
+
+PASS src/services/session/aws/aws-iam-user-service.spec.ts
+  AwsIamUserService
+    ✓ isTokenExpired, returns true if current time is greater than the token expiration time (2 ms)
+    ✓ isTokenExpired, returns false if current time is less than the token expiration time
+    ✓ sessionTokenFromGetSessionTokenResponse, throws an exception if getSessionTokenResponse does not contain a Credentials key (31 ms)
+    ✓ sessionTokenFromGetSessionTokenResponse, returns the expected session token if getSessionTokenResponse is a properly formatted Credentials object (1 ms)
+    ✓ create (1 ms)
+    ✓ applyCredentials
+    ✓ deApplyCredentials
+    update
+      repository.getSessionById
+        ✓ has been called once with the expected parameter
+      keychainService.saveSecret
+        if accessKey is provided in the awsIamUserSessionRequest
+          ✓ is called once with the expected parameters (1 ms)
+        if secretKey is provided in the awsIamUserSessionRequest
+          ✓ is called once with the expected parameters
+      repository.updateSession
+        ✓ has been called once with the expected parameters
+      sessionNotifier.setSessions
+        ✓ has been called once with repository.getSessions result
+    generateCredentialsProxy
+      if generateCredentials resolves
+        ✓ that generateCredentialsProxy resolves mockedCredentialsInfo (1 ms)
+      if generateCredentials rejects
+        ✓ that generateCredentialsProxy resolves mockedCredentialsInfo
+    generateCredentials
+      if session was not found
+        ✓ it throws a LoggedException
+      if session.sessionTokenExpiration is not expired
+        ✓ it invokes JSON.parse with the sessionToken retrieved by keychainService.getSecret
+        if JSON.parse throws an Error
+          ✓ it throws a new LoggedException
+      if session.sessionTokenExpiration is expired
+        ✓ AwsIamUserService.getAccessKeyFromKeychain has been called once with given sessionId (1 ms)
+        ✓ AwsIamUserService.getSecretKeyFromKeychain has been called once with given sessionId (1 ms)
+        if session mfaDevice attribute is set
+          ✓ generateSessionTokenCallingMfaModal has been called once with the expected parameters (1 ms)
+        if session mfaDevice attribute is not set
+          ✓ generateSessionToken has been called once with the expected parameters (2 ms)
+    getAccountNumberFromCallerIdentity
+      ✓ Given a session it retrieves the account number (4 ms)
+      ✓ Given a session it returns an empty string if no caller identity is found (1 ms)
+      ✓ Given a session it throws an error (1 ms)
+    validateCredentials
+      ✓ generateCredentials works as expected
+      ✓ generateCredentials fails
+    removeSecrets
+      ✓ It removes all the secrets of a session from the OS keychain if everything is OK
+      ✓ KO in remove access key from keychain, throws Error
+      ✓ KO in remove secret key from keychain, throws Error
+      ✓ KO in remove session token from keychain, throws Error (1 ms)
+    getCloneRequest
+      ✓ Given a specific session it returns a Request Object
+    generateSessionTokenCallingMfaModal
+      ✓ It opens a modal and if the modal gives the corerect mfa code and closes itself, it returns a valid session token
+      ✓ It opens a modal and if the modal gives the close signal and closes itself, it rejects with a Logged Exceptions (1 ms)
+    getAccessKeyFromKeychain
+      ✓ If a session id is passed and the secret found, the access key is retrieved by calling get secret from keychain service
+    getSecretKeyFromKeychain
+      ✓ If a session id is passed and the secret found, the secret key is retrieved by calling get secret from keychain service
+    removeAccessKeyFromKeychain
+      ✓ If a session id is passed and the secret found, the access key is removed by calling delete secret from keychain service
+    removeSecretKeyFromKeychain
+      ✓ If a session id is passed and the secret found, the secret key is removed by calling delete secret from keychain service
+    removeSessionTokenFromKeychain
+      ✓ If a session id is passed and the secret found, it is removed by calling delete secret from keychain service
+    generateSessionToken
+      ✓ Given a valid session and an STS object, it retrieves the AWS Session Token (1 ms)
+      ✓ If an error occurs it throws a new Logged Exception
+    saveSessionTokenExpirationInTheSession
+      ✓ Given a session if credentials are set, it set them and then calls for session update on the UI (1 ms)
+      ✓ Given a session if credentials are not set, the expiration is skipped and then we call for session update on the UI
+
+PASS src/services/remote-procedures.spec.ts
+  RemoteProcedures
+    ✓ server default id
+    ✓ client default id (1 ms)
+    ✓ method not allowed by the server (48 ms)
+    ✓ isDesktopAppRunning, server not running (2 ms)
+    ✓ isDesktopAppRunning, server running (13 ms)
+    ✓ needAuthentication, server not running
+    ✓ needAuthentication, authentication needed (13 ms)
+    ✓ needAuthentication, throwing error (20 ms)
+    ✓ needMfa, server not running (4 ms)
+    ✓ needMfa, returns mfa code (37 ms)
+    ✓ needMfa, throwing error (12 ms)
+    ✓ awsSignIn, server not running
+    ✓ awsSignIn, signedIn (11 ms)
+    ✓ awsSignIn, throwing error (11 ms)
+    ✓ openVerificationWindow, server not running
+    ✓ openVerificationWindow, returns (12 ms)
+    ✓ openVerificationWindow, throwing error (13 ms)
+    ✓ refreshSessions, server not running
+    ✓ refreshSessions, server running (12 ms)
+    ✓ refreshSessions, server throwing (12 ms)
+    ✓ refreshIntegrations, server not running (1 ms)
+    ✓ refreshIntegrations, server running (12 ms)
+    ✓ refreshIntegrations, server throwing (13 ms)
+    ✓ msalProtectData (14 ms)
+    ✓ msalProtectData, server throwing (12 ms)
+    ✓ msalUnprotectData (11 ms)
+    ✓ msalUnprotectData, server throwing (10 ms)
+    ✓ keychainSaveSecret (13 ms)
+    ✓ keychainSaveSecret, server throwing (11 ms)
+    ✓ keychainGetSecret (11 ms)
+    ✓ keychainGetSecret, server throwing (14 ms)
+    ✓ keychainDeleteSecret (12 ms)
+    ✓ keychainDeleteSecret, server throwing (11 ms)
+    ✓ refreshWorkspaceState, server not running
+    ✓ refreshWorkspaceState, server running (12 ms)
+    ✓ refreshWorkspaceState, server throwing (13 ms)
+
+PASS src/services/web-console-service.spec.ts
+  WebConsoleService
+    ✓ getWebConsoleUrl - throws error if session's region starts with cn- (1 ms)
+    ✓ getWebConsoleUrl - generates a valid aws url to log (1 ms)
+    ✓ openWebConsole
+
+PASS src/services/session/aws/aws-iam-role-chained-service.spec.ts
+  AwsIamRoleChainedService
+    ✓ getCloneRequest (1 ms)
+    ✓ create - add a new role chained session
+    ✓ update
+    ✓ applyCredentials - apply a credential set by writing on the ini file
+    ✓ deApplyCredentials - remove data from the credentials file (1 ms)
+    ✓ generateCredentialsProxy
+    ✓ generateCredentials - generate a credential set (6 ms)
+    ✓ generateCredentials - RoleSessionName undefined
+    ✓ generateCredentials - throws an error
+    ✓ validateCredentials (1 ms)
+    ✓ removeSecret - exists
+    ✓ getAccountNumberFromCallerIdentity
+    ✓ getAccountNumberFromCallerIdentity - error (9 ms)
+    ✓ generateSessionToken - create a session token given the credential information we need (1 ms)
+    ✓ generateSessionToken - throws error
+    ✓ saveSessionTokenExpirationInTheSession - save a new token expiration in a specified session, with and without credentials
+
+PASS src/services/workspace-service.spec.ts
+  WorkspaceService
+    ✓ getWorkspace - return an instance of the workspace model
+    ✓ persistsWorkspace - persist the changes in the workspace
+    ✓ workspaceExists - verify if the workspace exists or not
+    ✓ getDefaultProfileId (11 ms)
+    ✓ createWorkspace
+    ✓ removeWorkspace
+    ✓ reloadWorkspace
+    ✓ setWorkspaceFileName
+    ✓ getWorkspaceFileName
+    ✓ extractGlobalSettings
+    ✓ extractGlobalSettings, by passing parameters
+    ✓ applyGlobalSettings, without purging any remote pinned sessions
+    ✓ applyGlobalSettings, purge remote pinned sessions which are no longer available after syncing (1 ms)
+
+PASS src/services/notification-service.spec.ts
+  NotificationService
+    ✓ constructor (2 ms)
+    ✓ getNotifications() - can return both all notifications or only the unread ones (2 ms)
+    ✓ setNotificationAsRead() - set the specific notification as read, if the uuid is missing or not found nothing is touched (3 ms)
+    ✓ setNotifications() - set the notifications (2 ms)
+    ✓ removeNotification() - remove a notification (2 ms)
+    ✓ getNotificationByUuid
+
+PASS src/services/session/aws/aws-iam-role-federated-service.spec.ts
+  AwsIamRoleFederatedService
+    ✓ getAccountNumberFromCallerIdentity
+    ✓ getAccountNumberFromCallerIdentity - error (11 ms)
+    ✓ sessionTokenFromGetSessionTokenResponse
+    ✓ create
+    ✓ update (1 ms)
+    ✓ getCloneRequest
+    ✓ applyCredentials
+    ✓ deApplyCredentials
+    ✓ generateCredentialsProxy
+    ✓ generateCredentials - fail
+    ✓ generateCredentials - success (8 ms)
+    ✓ validateCredentials - verify credentials validity
+    ✓ saveSessionTokenExpirationInTheSession - add token info in the session
+    ✓ assumeRoleWithSAML- success (1 ms)
+    ✓ assumeRoleWithSAML- fail
+
+PASS src/services/named-profiles-service.spec.ts
+  NamedProfilesService
+    ✓ getNamedProfiles (2 ms)
+    ✓ getNamedProfiles, excludingDefault (1 ms)
+    ✓ getNamedProfilesMap
+    ✓ getProfileIdByName, success
+    ✓ getProfileIdByName, creates a new profile (1 ms)
+    ✓ getSessionsWithNamedProfile
+    ✓ createNamedProfile
+    ✓ editNamedProfile (1 ms)
+    ✓ deleteNamedProfile (2 ms)
+    ✓ changeNamedProfile - AwsSessionService type, active
+    ✓ changeNamedProfile - AwsSessionService type, inactive
+    ✓ changeNamedProfile - not AwsSessionService type (2 ms)
+    ✓ getNewId (1 ms)
+    ✓ validateNewProfileName
+    ✓ validateNewProfileName - valid name with spaces
+    ✓ validateNewProfileName, empty name
+    ✓ validateNewProfileName, default name
+    ✓ validateNewProfileName, existent name
+    ✓ getProfileName (14 ms)
+    ✓ getDefaultProfileId (2 ms)
+
+PASS src/services/aws-core-service.spec.ts
+  AwsCoreService
+    ✓ getRegions
+    ✓ awsCredentialPath
+    ✓ awsBkpCredentialPath
+    ✓ awsConfigPath (1 ms)
+    ✓ awsBkpConfigPath
+    ✓ stsOptions
+
+PASS src/services/cloud-provider-service.spec.ts
+  CloudProviderService
+    ✓ availableCloudProviders (2 ms)
+    ✓ getSessionTypeMap
+    ✓ creatableAccessMethods - AWS (1 ms)
+    ✓ creatableAccessMethods - Azure
+    ✓ creatableIntegrationMethods
+    ✓ availableRegions (1 ms)
+
+  console.log
+    profileId
+
+      at Object.<anonymous> (src/services/workspace-consistency-service.spec.ts:181:15)
+
+PASS src/services/azure-core-service.spec.ts
+  azureCoreService
+    ✓ getLocations (1 ms)
+
+  console.log
+    idpUrlId
+
+      at Object.<anonymous> (src/services/workspace-consistency-service.spec.ts:181:15)
+
+  console.log
+    awsSsoConfigurationId
+
+      at Object.<anonymous> (src/services/workspace-consistency-service.spec.ts:181:15)
+
+PASS src/services/region-service.spec.ts
+  RegionsService
+    ✓ changeRegion, session not active (1 ms)
+    ✓ changeRegion, session active (1 ms)
+    ✓ getDefaultAwsRegion
+    ✓ changeDefaultAwsRegion
+
+  console.log
+    azureIntegrationId
+
+      at Object.<anonymous> (src/services/workspace-consistency-service.spec.ts:181:15)
+
+  console.log
+    parentSessionId
+
+      at Object.<anonymous> (src/services/workspace-consistency-service.spec.ts:181:15)
+
+PASS src/services/integration-factory.spec.ts
+  IntegrationFactory
+    ✓ getIntegrationService (2 ms)
+    ✓ create (1 ms)
+    ✓ update (1 ms)
+    ✓ delete
+    ✓ syncSessions
+    ✓ logout
+    ✓ setOnline (1 ms)
+    ✓ getRemainingHours
+    ✓ getIntegrations (1 ms)
+    ✓ getIntegrationById (2 ms)
+
+PASS src/services/workspace-consistency-service.spec.ts
+  WorkspaceConsistencyService
+    ✓ fileLockPath
+    ✓ fileLockBackupPath
+    ✓ getWorkspace, everything ok
+    ✓ getWorkspace, something wrong, backup existing (8 ms)
+    ✓ getWorkspace, something wrong, backup existing but corrupted (1 ms)
+    ✓ getWorkspace, something wrong, backup not existing (1 ms)
+    ✓ getWorkspace - restoreBackup throws an error (7 ms)
+    ✓ createNewWorkspace
+    ✓ checkConsistency, success
+    ✓ checkConsistency, duplicated ids (1 ms)
+    ✓ checkConsistency, invalid/missing ids (28 ms)
+    ✓ checkConsistency, missing integration types
+    ✓ saveBackup (1 ms)
+    ✓ save
+    ✓ loadWorkspace
+    ✓ restoreBackup (1 ms)
+    ✓ cleanWorkspace
+
+PASS src/services/integration/aws-sso-integration-service.spec.ts
+  AwsSsoIntegrationService
+    ✓ validateAlias - empty alias (1 ms)
+    ✓ validateAlias - only spaces alias
+    ✓ validateAlias - valid alias (1 ms)
+    ✓ validatePortalUrl - invalid Url
+    ✓ validatePortalUrl - http Url
+    ✓ validatePortalUrl - https Url
+    ✓ getIntegrations
+    ✓ remainingHours
+    ✓ loginAndGetSessionsDiff 0 (2 ms)
+    ✓ loginAndGetSessionsDiff 1
+    ✓ loginAndGetSessionsDiff 2
+    ✓ syncSessions
+    ✓ logout (3 ms)
+    ✓ getAccessToken, token expired
+    ✓ getAccessToken, token not expired
+    ✓ getRoleCredentials (1 ms)
+    ✓ getAwsSsoIntegrationTokenInfo, existing integration
+    ✓ getAwsSsoIntegrationTokenInfo, integration not found
+    ✓ isAwsSsoAccessTokenExpired, not expired
+    ✓ isAwsSsoAccessTokenExpired, expired
+    ✓ isAwsSsoAccessTokenExpired, expired with expiration undefined
+    ✓ getDate (1 ms)
+    ✓ getIntegrationAccessTokenKey
+    ✓ login (5 ms)
+    ✓ setupSsoPortalClient, sso portal not set up (5 ms)
+    ✓ listAccounts
+    ✓ recursiveListAccounts
+    ✓ setupSsoPortalClient, sso portal already set up
+    ✓ createIntegration (1 ms)
+    ✓ deleteIntegration
+    ✓ getSessions
+    ✓ configureAwsSso
+    ✓ getAccessTokenFromKeychain
+    ✓ updateIntegration
+    ✓ getIntegration
+    ✓ getOnlineIntegrations (1 ms)
+    ✓ getOfflineIntegrations
+    ✓ getProtocol
+    ✓ deleteDependentSessions
+    ✓ findOldSession
+    ✓ getSessionsFromAccount
+    ✓ recursiveListRoles (1 ms)
+    ✓ recursiveListRoles - callWithThrottle throwing an error
+
+PASS src/http/http-client.provider.spec.ts
+  HttpClientProvider
+    ✓ HttpClientProvider.get
+    ✓ HttpClientProvider.put
+    ✓ HttpClientProvider.post (1 ms)
+    ✓ HttpClientProvider.delete
+    ✓ HttpClientProvider.getHttpHeaders
+
+PASS src/services/session/aws/aws-sso-role-service.spec.ts
+  AwsSsoRoleService
+    ✓ sessionTokenFromGetSessionTokenResponse (1 ms)
+    ✓ setAwsIntegrationDelegate
+    ✓ catchClosingBrowserWindow
+    ✓ create - with session notifier (1 ms)
+    ✓ create - no session notifier
+    ✓ update (12 ms)
+    ✓ getCloneRequest
+    ✓ applyCredentials (1 ms)
+    ✓ deApplyCredentials
+    ✓ generateCredentialsProxy
+    ✓ generateCredentials (16 ms)
+    ✓ getAccountNumberFromCallerIdentity
+    ✓ getAccountNumberFromCallerIdentity - error
+    ✓ sessionDeactivated
+    ✓ validateCredentials
+    ✓ saveSessionTokenExpirationInTheSession - credentials not undefined (3 ms)
+
+PASS src/services/log-service.spec.ts
+  LogService
+    ✓ log (1 ms)
+    ✓ log - 2 (8 ms)
+
+PASS src/services/rotation-service.spec.ts
+  RotationService
+    ✓ rotate - should rotate an active session when expired (1 ms)
+    ✓ rotate - should not rotate when a session is not expired
+
+PASS src/models/aws/aws-sso-role-session.spec.ts
+  AWS SSO Role Session
+    ✓ should create (1 ms)
+
+PASS src/services/execute-service.spec.ts
+  ExecuteService
+    ✓ execute, command without sudo, not darwin os
+    ✓ execute, command with sudo, not darwin os
+
+PASS src/services/azure-persistence-service.spec.ts
+  MsalPersistenceService
+    ✓ load normally (1 ms)
+    ✓ load - mimic other system
+    ✓ load - mimic windows - check extension
+    ✓ saveMsalCache (1 ms)
+    ✓ saveMsalCache - 2 (3 ms)
+    ✓ load profile (1 ms)
+    ✓ save profile
+    ✓ getAzureSecrets (1 ms)
+    ✓ setAzureSecrets
+    ✓ deleteAzureSecrets
+    ✓ deleteAzureSecrets, deleteSecret throws an exception
+
+PASS src/errors/leapp-modal-closed-error.spec.ts
+  LeappModalClosedError
+    ✓ validate existence and super parameters
+
+PASS src/models/aws/aws-iam-user-session.spec.ts
+  AWS IAM User Session Model
+    ✓ should create with MFA device
+    ✓ should create without MFA device
+
+PASS src/errors/leapp-not-aws-account-error.spec.ts
+  LeappNotAwsAccountError
+    ✓ validate existence and super parameters (1 ms)
+
+PASS src/services/segment-service.spec.ts
+  SegmentService
+    ✓ list (1 ms)
+    ✓ setSegments
+    ✓ getSegmentByName
+    ✓ removeSegment
+
+PASS src/services/session-management-service.spec.ts
+  SessionManagementService
+    ✓ getSessions - return a list of sessions from repository
+    ✓ getAssumableSessions - return a list of sessions from repository that are assumable
+    ✓ getActiveAndPendingSessions - return a list of sessions from repository that are active or pending (1 ms)
+    ✓ getActiveSessions - return a list of sessions from repository that are active
+    ✓ getPendingSessions - return a list of sessions from repository that are pending
+    ✓ getSessionById - return a session from repository based on its ID
+    ✓ updateSessions - update and persists all the sessions
+    ✓ deleteSession - delete a session and persists all the other sessions
+    ✓ getIamRoleChained
+    ✓ updateSession (1 ms)
+    ✓ stopAllSessions
+
+PASS src/services/integration/integration-is-online-state-refresh-service.spec.ts
+  ✓ refreshIsOnlineState (3 ms)
+
+PASS src/models/access-method.spec.ts
+  accessMethod
+    ✓ getSessionCreationRequest (1 ms)
+
+PASS src/models/session.spec.ts
+  Session Model
+    ✓ should create (1 ms)
+    ✓ expired(), startDateTime undefined
+    ✓ expired(), with startDateTime
+
+PASS src/models/azure/azure-integration.spec.ts
+  Azure Integration Model
+    ✓ should create and be offline (1 ms)
+    ✓ set tokenExpiration
+    ✓ get tokenExpiration
+
+PASS src/models/workspace.spec.ts
+  Workspace Model
+    ✓ if changing a field in the workspace class, warn about workspace version (1 ms)
+    ✓ should create
+    ✓ addIdpUrl()
+    ✓ get macOSTerminal
+    ✓ set macOSTerminal
+    ✓ set macOSTerminal
+    ✓ get idpUrls
+    ✓ set idpUrls
+    ✓ get profiles
+    ✓ set profiles
+    ✓ setNewWorkspaceVersion
+    ✓ get Sessions
+    ✓ set Sessions
+    ✓ proxyConfiguration
+    ✓ set proxyConfiguration
+    ✓ defaultRegion
+    ✓ set defaultRegion
+    ✓ defaultLocation
+    ✓ set defaultLocation
+    ✓ awsSsoIntegrations
+    ✓ set awsSsoIntegrations
+    ✓ azureIntegrations
+    ✓ set azureIntegrations (1 ms)
+    ✓ pinned
+    ✓ set pinned
+    ✓ folders
+    ✓ set folders
+    ✓ segments
+    ✓ set segments
+    ✓ colorTheme
+    ✓ set colorTheme
+    ✓ credentialMethod
+    ✓ set credentialMethod
+    ✓ pluginStatus
+    ✓ set pluginStatus
+    ✓ samlRoleSessionDuration
+    ✓ set samlRoleSessionDuration
+    ✓ ssmRegionBehaviour
+    ✓ set ssmRegionBehaviour
+    ✓ extensionEnabled
+    ✓ set extensionEnabled
+    ✓ get notifications
+    ✓ set notifications (1 ms)
+
+PASS src/errors/leapp-execute-error.spec.ts
+  LeappExecuteError
+    ✓ validate existence and super parameters
+
+PASS src/models/aws/aws-iam-role-federated-session.spec.ts
+  AWS IAM Role Federated Session Model
+    ✓ should create (1 ms)
+
+PASS src/services/session-factory.spec.ts
+  sessionFactory
+    ✓ getSessionService
+    ✓ createSession (1 ms)
+    ✓ getCompatibleTypes (2 ms)
+
+PASS src/models/aws/aws-iam-role-chained-session.spec.ts
+  AWS IAM Role Chained Session Model
+    ✓ should create with a role session name (1 ms)
+    ✓ should create without a role session name
+
+PASS src/plugin-sdk/aws-credentials-plugin.spec.ts
+  Aws Credentials Plugin
+    ✓ run
+    ✓ actionIcon (1 ms)
+
+PASS src/errors/leapp-aws-sts-error.spec.ts
+  LeappAwsStsError
+    ✓ validate existence and super parameters (2 ms)
+
+PASS src/errors/leapp-missing-mfa-token-error.spec.ts
+  LeappMissingMfaTokenError
+    ✓ validate existence and super parameters
+
+PASS src/models/aws/aws-sso-integration.spec.ts
+  AWS SSO Integration
+    ✓ should create with isOnline set to false
+
+PASS src/errors/leapp-not-found-error.spec.ts
+  LeappNotFoundError
+    ✓ validate existence and super parameters (1 ms)
+
+PASS src/errors/leapp-saml-error.spec.ts
+  LeappSamlError
+    ✓ validate existence and super parameters (1 ms)
+
+PASS src/models/localstack/localstack-session.spec.ts
+  AWS IAM User Session Model
+    ✓ should create with MFA device
+
+PASS src/errors/leapp-parse-error.spec.ts
+  LeappParseError
+    ✓ validate existence and super parameters (1 ms)
+
+PASS src/models/notification.spec.ts
+  Notification Model
+    ✓ should create (1 ms)
+
+PASS src/models/aws/aws-sso-integration-token-info.spec.ts
+  AWS SSO Integration Token Info
+    ✓ should create
+
+PASS src/services/file-service.spec.ts
+  File Service
+    ✓ homeDir
+    ✓ existsSync
+    ✓ renameSync
+    ✓ dirname
+    ✓ copyDir
+    ✓ readFileSync
+    ✓ getSubDirs
+    ✓ newDir
+    ✓ writeFileSync (1 ms)
+    ✓ writeFileSyncWithOptions
+    ✓ removeFileSync, if file exists
+    ✓ iniWriteSync
+    ✓ replaceWriteSync
+    ✓ iniParseSync
+    ✓ encryptText
+    ✓ decryptText (1 ms)
+
+PASS src/models/aws/aws-process-credential.spec.ts
+  AWS Process Credential
+    ✓ should create (1 ms)
+
+PASS src/errors/leapp-link-error.spec.ts
+  LeappLinkError
+    ✓ validate existence and super parameters
+
+PASS src/models/constants.spec.ts
+  Constants
+    ✓ constansts - samlRoleSessionDuration must be set at 3600
+    ✓ constansts - sessionDuration must be set at 1200
+    ✓ constansts - sessionTokenDuration must be set at 36000
+    ✓ constansts - timeout must be set at 10000
+
+PASS src/models/aws/aws-sso-integration-creation-params.spec.ts
+  AWS SSO Integration Creation Params
+    ✓ should create (1 ms)
+
+PASS src/models/aws/aws-named-profile.spec.ts
+  AWS Named Profile
+    ✓ should create
+
+PASS src/services/aws-assumer-session-types.spec.ts
+  Aws Assumer Session Types
+    ✓ Check that enum is as expected (1 ms)
+
+PASS src/services/session/session-service.spec.ts
+  SessionService
+    ✓ isInactive
+    ✓ sessionDeactivated - sessionId found (1 ms)
+    ✓ sessionDeactivated - no session notifier
+    ✓ sessionDeactivated - sessionId not found
+    ✓ sessionActivated - sessionId found with sessionTokenExpiration (1 ms)
+    ✓ sessionActivated - sessionId found without sessionTokenExpiration
+    ✓ sessionActivated - sessionId not found
+    ✓ sessionLoading - sessionId found
+    ✓ sessionLoading - sessionId not found
+    ✓ sessionLoading - no session notifier
+    ✓ sessionError
+
+PASS src/models/idp-url-access-method-field.spec.ts
+  IdpUrlAccessMethodField
+    ✓ isIdpUrlToCreate, field is "create new idp url"
+    ✓ isIdpUrlToCreate, field is not "create new idp url"
+
+PASS src/services/ssm-service.spec.ts
+  SsmService
+    ✓ getSsmInstances - should retrieve a list of ssm sessions given a valid region (109 ms)
+    ✓ getSsmInstances - should call private method (104 ms)
+    ✓ getSsmInstances - setFilteringForEc2CallsCallback not set (101 ms)
+    ✓ startSession - should start a ssm session by calling the execute service (102 ms)
+    ✓ startSession - on macOS, should create the env file, start an ssm session, and then remove the file (101 ms)
+    ✓ startSession - openTerminal throws an error and on macOS the env file is removed (9 ms)
+    ✓ requestSsmInstances, plus error checking (1 ms)
+    ✓ applyEc2MetadataInformation
+    ✓ applyEc2MetadataInformation - no found names (1 ms)
+    ✓ log service completion - must be done here because it seems that for jest --coverage the file is tied here...
+
+PASS src/services/throttle-service.spec.ts (7.075 s)
+  ThrottledService
+    ✓ callWithThrottle (2581 ms)
+    ✓ callWithThrottle, max pendingCalls (4003 ms)
+    ✓ callWithThrottle, error handling (1 ms)
+
+-------------------------------------------------|---------|----------|---------|---------|----------------------
+File                                             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s    
+-------------------------------------------------|---------|----------|---------|---------|----------------------
+All files                                        |   92.66 |    84.36 |   92.84 |   92.54 |                      
+ errors                                          |     100 |      100 |     100 |     100 |                      
+  leapp-aws-sts-error.ts                         |     100 |      100 |     100 |     100 |                      
+  leapp-base-error.ts                            |     100 |      100 |     100 |     100 |                      
+  leapp-execute-error.ts                         |     100 |      100 |     100 |     100 |                      
+  leapp-link-error.ts                            |     100 |      100 |     100 |     100 |                      
+  leapp-missing-mfa-token-error.ts               |     100 |      100 |     100 |     100 |                      
+  leapp-modal-closed-error.ts                    |     100 |      100 |     100 |     100 |                      
+  leapp-not-aws-account-error.ts                 |     100 |      100 |     100 |     100 |                      
+  leapp-not-found-error.ts                       |     100 |      100 |     100 |     100 |                      
+  leapp-parse-error.ts                           |     100 |      100 |     100 |     100 |                      
+  leapp-saml-error.ts                            |     100 |      100 |     100 |     100 |                      
+ http                                            |     100 |      100 |     100 |     100 |                      
+  http-client.provider.ts                        |     100 |      100 |     100 |     100 |                      
+ interfaces                                      |       0 |        0 |       0 |       0 |                      
+  i-aws-integration-delegate.ts                  |       0 |        0 |       0 |       0 |                      
+  i-aws-saml-authentication-service.ts           |       0 |        0 |       0 |       0 |                      
+  i-aws-sso-oidc-verification-window-service.ts  |       0 |        0 |       0 |       0 |                      
+  i-behavioural-notifier.ts                      |       0 |        0 |       0 |       0 |                      
+  i-browser-window-closing.ts                    |       0 |        0 |       0 |       0 |                      
+  i-global-settings.ts                           |       0 |        0 |       0 |       0 |                      
+  i-http-client.ts                               |       0 |        0 |       0 |       0 |                      
+  i-integration-service.ts                       |       0 |        0 |       0 |       0 |                      
+  i-keychain-service.ts                          |       0 |        0 |       0 |       0 |                      
+  i-logger.ts                                    |       0 |        0 |       0 |       0 |                      
+  i-mfa-code-prompter.ts                         |       0 |        0 |       0 |       0 |                      
+  i-msal-encryption-service.ts                   |       0 |        0 |       0 |       0 |                      
+  i-native-service.ts                            |       0 |        0 |       0 |       0 |                      
+  i-open-external-url-service.ts                 |       0 |        0 |       0 |       0 |                      
+  i-team-service.ts                              |       0 |        0 |       0 |       0 |                      
+ models                                          |     100 |      100 |    98.3 |     100 |                      
+  access-method-field-type.ts                    |       0 |        0 |       0 |       0 |                      
+  access-method-field.ts                         |       0 |        0 |       0 |       0 |                      
+  access-method.ts                               |     100 |      100 |     100 |     100 |                      
+  cloud-provider-type.ts                         |       0 |        0 |       0 |       0 |                      
+  constants.ts                                   |     100 |      100 |     100 |     100 |                      
+  credentials-info.ts                            |       0 |        0 |       0 |       0 |                      
+  credentials.ts                                 |       0 |        0 |       0 |       0 |                      
+  folder.ts                                      |       0 |        0 |       0 |       0 |                      
+  idp-url-access-method-field.ts                 |     100 |      100 |     100 |     100 |                      
+  idp-url.ts                                     |       0 |        0 |       0 |       0 |                      
+  integration-method.ts                          |       0 |        0 |       0 |       0 |                      
+  integration-params.ts                          |       0 |        0 |       0 |       0 |                      
+  integration-type.ts                            |       0 |        0 |       0 |       0 |                      
+  integration.ts                                 |       0 |        0 |       0 |       0 |                      
+  notification.ts                                |       0 |        0 |       0 |       0 |                      
+  operating-system.ts                            |     100 |      100 |     100 |     100 |                      
+  plugin-status.ts                               |       0 |        0 |       0 |       0 |                      
+  remote-workspace-settings-map.ts               |       0 |        0 |       0 |       0 |                      
+  segment.ts                                     |       0 |        0 |       0 |       0 |                      
+  session-selection-state.ts                     |       0 |        0 |       0 |       0 |                      
+  session-status.ts                              |       0 |        0 |       0 |       0 |                      
+  session-type.ts                                |       0 |        0 |       0 |       0 |                      
+  session.ts                                     |     100 |      100 |     100 |     100 |                      
+  workspace.ts                                   |     100 |      100 |     100 |     100 |                      
+ models/aws                                      |     100 |      100 |     100 |     100 |                      
+  aws-iam-role-chained-session.ts                |     100 |      100 |     100 |     100 |                      
+  aws-iam-role-federated-session.ts              |     100 |      100 |     100 |     100 |                      
+  aws-iam-user-session.ts                        |     100 |      100 |     100 |     100 |                      
+  aws-named-profile.ts                           |       0 |        0 |       0 |       0 |                      
+  aws-process-credential.ts                      |       0 |        0 |       0 |       0 |                      
+  aws-sso-integration-creation-params.ts         |       0 |        0 |       0 |       0 |                      
+  aws-sso-integration-token-info.ts              |       0 |        0 |       0 |       0 |                      
+  aws-sso-integration.ts                         |     100 |      100 |     100 |     100 |                      
+  aws-sso-role-session.ts                        |     100 |      100 |     100 |     100 |                      
+ models/azure                                    |     100 |      100 |     100 |     100 |                      
+  azure-integration-creation-params.ts           |       0 |        0 |       0 |       0 |                      
+  azure-integration.ts                           |     100 |      100 |     100 |     100 |                      
+  azure-session.ts                               |     100 |      100 |     100 |     100 |                      
+ models/localstack                               |     100 |      100 |     100 |     100 |                      
+  localstack-session.ts                          |     100 |      100 |     100 |     100 |                      
+ plugin-sdk                                      |   97.76 |    87.32 |    87.5 |   97.72 |                      
+  aws-credentials-plugin.ts                      |     100 |      100 |     100 |     100 |                      
+  plugin-environment.ts                          |   85.71 |       50 |   66.66 |   85.71 | 44-48,64-65          
+  plugin-log-level.ts                            |       0 |        0 |       0 |       0 |                      
+  plugin-manager-service.ts                      |     100 |    90.76 |     100 |     100 | 53,69,93-105,199,244 
+ plugin-sdk/interfaces                           |       0 |      100 |       0 |       0 |                      
+  aws-iam-role-chained-session-data.ts           |       0 |      100 |       0 |       0 | 15-19                
+  aws-iam-role-federated-session-data.ts         |       0 |      100 |       0 |       0 | 25-29                
+  aws-iam-user-session-data.ts                   |       0 |      100 |       0 |       0 | 15-19                
+  i-plugin-environment.ts                        |       0 |        0 |       0 |       0 |                      
+  i-plugin.ts                                    |       0 |        0 |       0 |       0 |                      
+  session-data.ts                                |       0 |        0 |       0 |       0 |                      
+ services                                        |   87.69 |    80.79 |   90.44 |   87.21 |                      
+  aws-assumer-session-types.ts                   |     100 |      100 |     100 |     100 |                      
+  aws-core-service.ts                            |   82.35 |       60 |     100 |   81.25 | 65-71                
+  aws-saml-assertion-extraction-service.ts       |     100 |      100 |     100 |     100 |                      
+  aws-sso-oidc.service.ts                        |       0 |        0 |       0 |       0 | 29-182               
+  azure-core-service.ts                          |     100 |      100 |     100 |     100 |                      
+  azure-location.ts                              |       0 |        0 |       0 |       0 |                      
+  azure-persistence-service.ts                   |     100 |      100 |     100 |     100 |                      
+  behavioural-subject-service.ts                 |   80.64 |      100 |   81.81 |   81.48 | 77-89                
+  cloud-provider-service.ts                      |     100 |      100 |     100 |     100 |                      
+  execute-service.ts                             |   12.76 |     8.33 |      25 |   12.76 | 10,35-40,57-185      
+  field-choice.ts                                |       0 |        0 |       0 |       0 |                      
+  file-service.ts                                |     100 |      100 |     100 |     100 |                      
+  idp-urls-service.ts                            |   87.17 |    88.23 |    87.5 |   88.57 | 80-84                
+  integration-factory.ts                         |   96.87 |       90 |     100 |   96.77 | 65                   
+  keychain-service.ts                            |       0 |        0 |       0 |       0 | 15-36                
+  log-service.ts                                 |   88.88 |      100 |      80 |   88.88 | 37                   
+  named-profiles-service.ts                      |   92.06 |     91.3 |   90.47 |   92.85 | 56-60                
+  notification-service.ts                        |     100 |      100 |     100 |     100 |                      
+  regions-service.ts                             |     100 |      100 |     100 |     100 |                      
+  remote-procedures-client.ts                    |     100 |    96.77 |     100 |     100 | 56                   
+  remote-procedures-server.ts                    |   97.43 |    77.77 |     100 |     100 | 15-19                
+  repository.ts                                  |     100 |      100 |     100 |     100 |                      
+  retro-compatibility-service.ts                 |     100 |    98.24 |     100 |     100 | 72                   
+  rotation-service.ts                            |     100 |      100 |     100 |     100 |                      
+  segment-service.ts                             |     100 |      100 |     100 |     100 |                      
+  session-factory.ts                             |   94.11 |     92.3 |     100 |   94.11 | 34                   
+  session-management-service.ts                  |   93.75 |      100 |   92.85 |   93.33 | 38                   
+  ssm-service.ts                                 |    98.3 |      100 |      80 |   98.21 | 28                   
+  throttle-service.ts                            |     100 |      100 |     100 |     100 |                      
+  timer-service.ts                               |       0 |        0 |       0 |       0 | 3-18                 
+  web-console-service.ts                         |     100 |    83.33 |     100 |     100 | 68                   
+  workspace-consistency-service.ts               |     100 |     92.5 |     100 |     100 | 34,101-138           
+  workspace-service.ts                           |     100 |     90.9 |     100 |     100 | 52                   
+ services/integration                            |   98.82 |    92.85 |     100 |   99.17 |                      
+  aws-sso-integration-service.ts                 |    98.1 |    87.03 |     100 |   98.68 | 187-188              
+  azure-integration-service.ts                   |     100 |      100 |     100 |     100 |                      
+  integration-is-online-state-refresh-service.ts |     100 |      100 |     100 |     100 |                      
+ services/session                                |     100 |      100 |     100 |     100 |                      
+  create-aws-session-request.ts                  |       0 |        0 |       0 |       0 |                      
+  create-session-request.ts                      |       0 |        0 |       0 |       0 |                      
+  session-service.ts                             |     100 |      100 |     100 |     100 |                      
+ services/session/aws                            |   96.73 |    84.41 |   97.95 |   96.68 |                      
+  aws-iam-role-chained-service.ts                |   98.41 |       75 |     100 |   98.41 | 57                   
+  aws-iam-role-chained-session-request.ts        |       0 |        0 |       0 |       0 |                      
+  aws-iam-role-federated-service.ts              |   95.08 |       70 |     100 |   95.08 | 47,51,182            
+  aws-iam-role-federated-session-request.ts      |       0 |        0 |       0 |       0 |                      
+  aws-iam-user-service.ts                        |   98.16 |     92.3 |     100 |   98.13 | 66,70                
+  aws-iam-user-session-request.ts                |       0 |        0 |       0 |       0 |                      
+  aws-parent-session.factory.ts                  |       0 |        0 |       0 |       0 | 15-21                
+  aws-session-service.ts                         |     100 |    95.45 |     100 |     100 | 165                  
+  aws-sso-role-service.ts                        |   96.29 |      100 |     100 |   96.22 | 158-159              
+  aws-sso-role-session-request.ts                |       0 |        0 |       0 |       0 |                      
+ services/session/azure                          |     100 |    85.71 |     100 |     100 |                      
+  azure-session-request.ts                       |       0 |        0 |       0 |       0 |                      
+  azure-session-service.ts                       |     100 |    85.71 |     100 |     100 | 58-73,122            
+ services/session/localstack                     |     100 |     87.5 |     100 |     100 |                      
+  localstack-session-request.ts                  |       0 |        0 |       0 |       0 |                      
+  localstack-session-service.ts                  |     100 |     87.5 |     100 |     100 | 125-148,195          
+-------------------------------------------------|---------|----------|---------|---------|----------------------
+
+=============================== Coverage summary ===============================
+Statements   : 92.66% ( 2223/2399 )
+Branches     : 84.36% ( 599/710 )
+Functions    : 92.84% ( 805/867 )
+Lines        : 92.54% ( 2109/2279 )
+================================================================================
+Test Suites: 68 passed, 68 total
+Tests:       715 passed, 715 total
+Snapshots:   0 total
+Time:        7.791 s
+Ran all test suites.

@@ -1,0 +1,13 @@
+{
+  "operation": "setup",
+  "path": "packages/core",
+  "command": "npm run setup",
+  "start": "2026-05-15T16:43:47Z",
+  "end": "2026-05-15T16:44:58Z",
+  "exit_code": 0,
+  "duration_seconds": 71,
+  "env": { "node": "v25.2.1", "npm": "11.11.1", "os": "Darwin FatTony.local 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:48:41 PST 2026; root:xnu-12377.81.4~5/RELEASE_ARM64_T6041 arm64" },
+  "tests": { "total": null, "passed": null, "failed": null },
+  "coverage": { "statements": null },
+  "artifacts": [".logs/setup-2026-05-15T16-43-47Z.log"]
+}
