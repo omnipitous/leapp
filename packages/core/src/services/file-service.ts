@@ -1,7 +1,6 @@
 import { Subscription } from "rxjs";
 import { INativeService } from "../interfaces/i-native-service";
-
-const cryptoJS = require("crypto-js");
+import * as cryptoJS from "crypto-js";
 
 export class FileService {
   private readSubscription: Subscription;

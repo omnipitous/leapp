@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "class-transformer": [
+        "./node_modules/class-transformer"
+      ],
+      "crypto-js": [
+        "./node_modules/crypto-js"
+      ],
+      "node-ipc": [
+        "./node_modules/node-ipc"
+      ],
+      "reflect-metadata": [
+        "./node_modules/reflect-metadata"
+      ],
+      "rxjs": [
+        "./node_modules/rxjs"
+      ],
+      "uuid": [
+        "./node_modules/uuid"
+      ]
+    },
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": [
+      "vite/client"
+    ]
+  },
+  "include": [
+    "src"
+  ]
+}

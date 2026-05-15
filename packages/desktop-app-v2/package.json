@@ -1,0 +1,99 @@
+{
+  "name": "leapp-desktop-v2",
+  "version": "0.1.0",
+  "private": true,
+  "author": {
+    "name": "Noovolari",
+    "email": "info@noovolari.com"
+  },
+  "description": "Leapp desktop app v2, built with React and Electron.",
+  "main": "electron/dist/electron/main.js",
+  "homepage": "https://github.com/Noovolari/leapp",
+  "scripts": {
+    "clean": "node ./scripts/clean.mjs",
+    "build:renderer": "vite build --mode development",
+    "build:electron": "tsc -p electron",
+    "build-dev": "npm run clean && npm run build:renderer && npm run build:electron",
+    "build-prod": "npm run clean && vite build --mode production && npm run build:electron",
+    "run-local": "electron .",
+    "build-and-run-dev": "npm run build-dev && npm run run-local",
+    "release-mac": "npm run build-prod && electron-builder --mac",
+    "release-linux": "npm run build-prod && electron-builder --linux",
+    "release-win": "npm run build-prod && electron-builder --win",
+    "release-all": "npm run build-prod && electron-builder -mwl"
+  },
+  "build": {
+    "protocols": {
+      "name": "leapp-deep-linking",
+      "schemes": [
+        "leapp"
+      ]
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Noovolari",
+        "repo": "leapp",
+        "releaseType": "release"
+      }
+    ],
+    "productName": "Leapp",
+    "files": [
+      "dist/leapp-client/*",
+      "dist/leapp-client/**/*",
+      "electron/dist/*",
+      "electron/dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "dist"
+    },
+    "appId": "com.leapp.app",
+    "linux": {
+      "category": "Utility",
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "mimeTypes": [
+        "x-scheme-handler/leapp"
+      ]
+    },
+    "mac": {
+      "target": [
+        "zip",
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  },
+  "dependencies": {
+    "class-transformer": "^0.4.0",
+    "crypto-js": "4.2.0",
+    "fs-extra": "~9.1.0",
+    "js-ini": "1.5.1",
+    "node-ipc": "9.2.1",
+    "node-machine-id": "~1.1.12",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "6.26.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "~6.6.7",
+    "uuid": "~8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.10.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "22.3.25",
+    "electron-builder": "26.0.12",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.19"
+  }
+}

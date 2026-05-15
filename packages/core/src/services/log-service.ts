@@ -1,4 +1,5 @@
 import { ILogger } from "../interfaces/i-logger";
+import packageJson from "../../package.json";
 
 /* istanbul ignore next */
 export enum LogLevel {
@@ -34,6 +35,6 @@ export class LogService {
   }
 
   getCoreVersion(): string {
-    return require("../../package.json").version;
+    return packageJson.version;
   }
 }
