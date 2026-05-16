@@ -1,0 +1,52 @@
+name: "Scheduled dependency bump (packages/core)"
+
+on:
+  schedule:
+    - cron: '0 4 * * 0' # weekly on Sunday 04:00 UTC (adjust as needed)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: willy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Run bump script
+        id: run_bump
+        run: |
+          bash ./.github/agents/leapp-bump-agent/run-bump.sh
+
+      - name: Show git status
+        run: |
+          git status --porcelain || true
+
+      - name: Detect changes
+        id: detect_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then echo "changed=true" >> $GITHUB_OUTPUT; else echo "changed=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Create Pull Request
+        if: steps.detect_changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: chore(core): automated dependency bump
+          branch: ${{ env.PR_BRANCH }}
+          base: ${{ env.TARGET_BRANCH }}
+          title: Automated dependency bump (packages/core)
+          body: |
+            This PR was created automatically by leapp-bump-agent.
+          labels: automated, dependencies
