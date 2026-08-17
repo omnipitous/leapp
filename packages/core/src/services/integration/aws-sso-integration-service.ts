@@ -26,6 +26,7 @@ import { AwsSsoIntegrationCreationParams } from "../../models/aws/aws-sso-integr
 import { ThrottleService } from "../throttle-service";
 import { IKeychainService } from "../../interfaces/i-keychain-service";
 import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
+import { LoggedException, LogLevel } from "../log-service";
 
 const portalUrlValidationRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
 
@@ -54,6 +55,13 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   static validatePortalUrl(portalUrl: string): boolean | string {
     return portalUrlValidationRegex.test(portalUrl) ? true : "Invalid portal URL";
+  }
+
+  // AWS can invalidate an access token server-side (e.g. session duration changed by an administrator,
+  // token revoked) before the expiration time Leapp saved locally, so clock-based checks are not enough.
+  static isAuthenticationError(error: any): boolean {
+    const authErrorNames = ["UnauthorizedException", "UnauthorizedClientException", "InvalidGrantException", "ExpiredTokenException"];
+    return authErrorNames.includes(error?.name) || error?.$metadata?.httpStatusCode === 401;
   }
 
   async createIntegration(creationParams: AwsSsoIntegrationCreationParams, _integrationId?: string): Promise<void> {
@@ -95,7 +103,7 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     const now = this.getDate().getTime();
     const isOnline = !!integration.accessTokenExpiration && now < expiration;
 
-    integration.isOnline = forcedState || isOnline;
+    integration.isOnline = forcedState !== undefined ? forcedState : isOnline;
 
     this.repository.updateAwsSsoIntegration(
       integration.id,
@@ -119,7 +127,17 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     const accessToken = await this.getAccessToken(integrationId, region, portalUrl);
     onUserAuthenticated?.();
 
-    const onlineSessions = await this.getSessions(integrationId, accessToken, region);
+    let onlineSessions: SsoRoleSession[];
+    try {
+      onlineSessions = await this.getSessions(integrationId, accessToken, region);
+    } catch (error) {
+      if (!AwsSsoIntegrationService.isAuthenticationError(error)) {
+        throw error;
+      }
+      const freshAccessToken = await this.getAccessToken(integrationId, region, portalUrl, true);
+      onUserAuthenticated?.();
+      onlineSessions = await this.getSessions(integrationId, freshAccessToken, region);
+    }
     const persistedSessions = this.repository.getAwsSsoIntegrationSessions(integrationId);
 
     const sessionsToDelete: AwsSsoRoleSession[] = [];
@@ -154,15 +172,36 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   async syncSessions(integrationId: string, onUserAuthenticated?: () => void): Promise<any> {
     const sessionsDiff = await this.loginAndGetSessionsDiff(integrationId, onUserAuthenticated);
+    const integrationName = this.repository?.getAwsSsoIntegration(integrationId)?.alias ?? "AWS SSO";
+    const totalChanges = sessionsDiff.sessionsToAdd.length + sessionsDiff.sessionsToDelete.length;
 
-    for (const ssoRoleSession of sessionsDiff.sessionsToAdd) {
-      ssoRoleSession.awsSsoConfigurationId = integrationId;
-      await this.awsSsoRoleService.create(ssoRoleSession);
-    }
+    // Persisting sessions one by one can take a while for large organizations,
+    // so keep reporting progress until the sync is truly complete
+    try {
+      if (totalChanges > 0) {
+        this.behaviouralNotifier?.setFetchingIntegrations(`${integrationName}: applying session changes (0/${totalChanges})...`);
+      }
+      let appliedChanges = 0;
+      const notifyProgress = () => {
+        appliedChanges++;
+        if (appliedChanges % 10 === 0 || appliedChanges === totalChanges) {
+          this.behaviouralNotifier?.setFetchingIntegrations(`${integrationName}: applying session changes (${appliedChanges}/${totalChanges})...`);
+        }
+      };
 
-    for (const ssoSession of sessionsDiff.sessionsToDelete) {
-      const sessionService = this.sessionFactory.getSessionService(ssoSession.type);
-      await sessionService.delete(ssoSession.sessionId);
+      for (const ssoRoleSession of sessionsDiff.sessionsToAdd) {
+        ssoRoleSession.awsSsoConfigurationId = integrationId;
+        await this.awsSsoRoleService.create(ssoRoleSession);
+        notifyProgress();
+      }
+
+      for (const ssoSession of sessionsDiff.sessionsToDelete) {
+        const sessionService = this.sessionFactory.getSessionService(ssoSession.type);
+        await sessionService.delete(ssoSession.sessionId);
+        notifyProgress();
+      }
+    } finally {
+      this.behaviouralNotifier?.setFetchingIntegrations(undefined);
     }
 
     return { sessionsDeleted: sessionsDiff.sessionsToDelete.length, sessionsAdded: sessionsDiff.sessionsToAdd.length };
@@ -184,9 +223,8 @@ export class AwsSsoIntegrationService implements IIntegrationService {
       try {
         await this.ssoPortal.logout(logoutRequest);
       } catch (error) {
-        if (!(error.message === "Session token not found or invalid")) {
-          throw error;
-        }
+        // The local logout must always succeed: the remote token may already be expired,
+        // revoked or invalid on the AWS side, and error messages vary between API versions
       }
     }
 
@@ -196,15 +234,16 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     // Delete access token and remove sso integration info from workspace
     await this.keyChainService.deleteSecret(constants.appName, this.getIntegrationAccessTokenKey(integrationId));
     this.repository.unsetAwsSsoIntegrationExpiration(integrationId);
+    integration.accessTokenExpiration = undefined;
 
     await this.setOnline(integration, false);
     this.behaviouralNotifier.setIntegrations([...this.repository.listAwsSsoIntegrations(), ...this.repository.listAzureIntegrations()]);
   }
 
-  async getAccessToken(integrationId: string, region: string, portalUrl: string): Promise<string> {
+  async getAccessToken(integrationId: string, region: string, portalUrl: string, forceRefresh: boolean = false): Promise<string> {
     const isAwsSsoAccessTokenExpired = await this.isAwsSsoAccessTokenExpired(integrationId);
 
-    if (isAwsSsoAccessTokenExpired) {
+    if (isAwsSsoAccessTokenExpired || forceRefresh) {
       const loginResponse = await this.login(integrationId, region, portalUrl);
       const integration: AwsSsoIntegration = this.repository.getAwsSsoIntegration(integrationId);
 
@@ -255,25 +294,44 @@ export class AwsSsoIntegrationService implements IIntegrationService {
   }
 
   private async getSessions(integrationId: string, accessToken: string, region: string): Promise<SsoRoleSession[]> {
-    this.behaviouralNotifier.setFetchingIntegrations("");
+    const integrationName = this.repository?.getAwsSsoIntegration(integrationId)?.alias ?? "AWS SSO";
+    this.behaviouralNotifier.setFetchingIntegrations(`${integrationName}: retrieving account list...`);
     this.setupSsoPortalClient(region);
-    const accounts: AccountInfo[] = await this.listAccounts(accessToken);
+    try {
+      const accounts: AccountInfo[] = await this.listAccounts(accessToken);
+      this.behaviouralNotifier.setFetchingIntegrations(`${integrationName}: found ${accounts.length} accounts, fetching roles...`);
 
-    let accountSynced = 0;
-    let errorFetching = false;
-    const promiseArray = accounts.map((account) =>
-      this.getSessionsFromAccount(integrationId, account, accessToken).finally(() => {
-        if (errorFetching) return;
-        accountSynced++;
-        this.behaviouralNotifier.setFetchingIntegrations(`Fetched ${accountSynced} of ${accounts.length} accounts...`);
-      })
-    );
-    return (
-      await Promise.all(promiseArray).finally(() => {
-        errorFetching = true;
-        this.behaviouralNotifier.setFetchingIntegrations(undefined);
-      })
-    ).flat();
+      let accountsSynced = 0;
+      const results = await Promise.allSettled(
+        accounts.map((account) =>
+          this.getSessionsFromAccount(integrationId, account, accessToken).then((sessions) => {
+            accountsSynced++;
+            this.behaviouralNotifier.setFetchingIntegrations(`${integrationName}: fetched ${accountsSynced} of ${accounts.length} accounts...`);
+            return sessions;
+          })
+        )
+      );
+
+      const failures = results.filter((result) => result.status === "rejected") as PromiseRejectedResult[];
+      if (failures.length > 0) {
+        // An authentication failure invalidates every account, so let the caller handle it (e.g. by re-logging in);
+        // partial results must never be returned, otherwise the sync would delete the sessions of the failed accounts
+        const authFailure = failures.find((failure) => AwsSsoIntegrationService.isAuthenticationError(failure.reason));
+        if (authFailure) {
+          throw authFailure.reason;
+        }
+        const firstReason = failures[0].reason;
+        throw new LoggedException(
+          `Failed to retrieve roles for ${failures.length} of ${accounts.length} accounts. First error: ${firstReason?.message ?? firstReason}`,
+          this,
+          LogLevel.error
+        );
+      }
+
+      return results.map((result) => (result as PromiseFulfilledResult<SsoRoleSession[]>).value).flat();
+    } finally {
+      this.behaviouralNotifier.setFetchingIntegrations(undefined);
+    }
   }
 
   private async configureAwsSso(
@@ -300,8 +358,13 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   private async login(integrationId: string | number, region: string, portalUrl: string): Promise<LoginResponse> {
     const redirectClient = this.nativeService.followRedirects[this.getProtocol(portalUrl)];
+    const originalPortalUrl = portalUrl;
     portalUrl = await new Promise((resolve, _) => {
       const request = redirectClient.request(portalUrl, (response) => resolve(response.responseUrl));
+      // A network error would otherwise emit an unhandled "error" event and leave this promise
+      // (and the whole login) hanging forever; fall back to the original URL and let the
+      // OIDC calls report a meaningful error if the network is really unavailable
+      request.on("error", () => resolve(originalPortalUrl));
       request.end();
     });
 
@@ -317,7 +380,8 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   private setupSsoPortalClient(region: string): void {
     if (!this.ssoPortal || this.ssoPortal.config.region !== region) {
-      const nextBackoffDelayComputationLambda = (attempt: number) => Math.floor(Math.random() * attempt * 1000);
+      // Full jitter with a 1-second floor: the previous formula could return 0ms and hammer a throttled endpoint
+      const nextBackoffDelayComputationLambda = (attempt: number) => 1000 + Math.floor(Math.random() * Math.min(attempt * 1000, 10000));
       this.ssoPortal = new SSO({
         region,
         maxAttempts: 30,
@@ -337,39 +401,22 @@ export class AwsSsoIntegrationService implements IIntegrationService {
   }
 
   private async listAccounts(accessToken: string): Promise<AccountInfo[]> {
-    const listAccountsRequest: ListAccountsRequest = { accessToken, maxResults: 30 };
+    const listAccountsRequest: ListAccountsRequest = { accessToken, maxResults: constants.ssoPortalListMaxResults };
     const accountList: AccountInfo[] = [];
 
-    return new Promise((resolve, _) => {
-      this.recursiveListAccounts(accountList, listAccountsRequest, resolve);
-    });
-  }
+    // Errors must propagate to the caller: a swallowed rejection here used to leave the sync hanging forever
+    let response;
+    do {
+      response = await this.ssoPortal.listAccounts(listAccountsRequest);
+      accountList.push(...(response.accountList ?? []));
+      listAccountsRequest.nextToken = response.nextToken || undefined;
+    } while (listAccountsRequest.nextToken);
 
-  private recursiveListAccounts(accountList: AccountInfo[], listAccountsRequest: ListAccountsRequest, promiseCallback: any) {
-    this.ssoPortal.listAccounts(listAccountsRequest).then((response) => {
-      accountList.push(...response.accountList);
-
-      if (response.nextToken !== null && response.nextToken !== undefined) {
-        listAccountsRequest.nextToken = response.nextToken;
-        this.recursiveListAccounts(accountList, listAccountsRequest, promiseCallback);
-      } else {
-        promiseCallback(accountList);
-      }
-    });
+    return accountList;
   }
 
   private async getSessionsFromAccount(integrationId: string, accountInfo: AccountInfo, accessToken: string): Promise<SsoRoleSession[]> {
-    const listAccountRolesRequest: ListAccountRolesRequest = {
-      accountId: accountInfo.accountId,
-      accessToken,
-      maxResults: 30, // TODO: find a proper value
-    };
-
-    const accountRoles: RoleInfo[] = [];
-
-    await new Promise<void>((resolve, reject) => {
-      this.recursiveListRoles(accountRoles, listAccountRolesRequest, resolve, reject);
-    });
+    const accountRoles: RoleInfo[] = await this.listAccountRoles(accountInfo, accessToken);
 
     const awsSsoSessions: SsoRoleSession[] = [];
 
@@ -391,30 +438,27 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     return awsSsoSessions;
   }
 
-  private recursiveListRoles(
-    accountRoles: RoleInfo[],
-    listAccountRolesRequest: ListAccountRolesRequest,
-    resolve: () => void,
-    reject: (error: Error) => void
-  ) {
-    this.listAccountRolesCall
-      .callWithThrottle([
+  private async listAccountRoles(accountInfo: AccountInfo, accessToken: string): Promise<RoleInfo[]> {
+    const listAccountRolesRequest: ListAccountRolesRequest = {
+      accountId: accountInfo.accountId,
+      accessToken,
+      maxResults: constants.ssoPortalListMaxResults,
+    };
+
+    const accountRoles: RoleInfo[] = [];
+    let response;
+    do {
+      response = await this.listAccountRolesCall.callWithThrottle([
         listAccountRolesRequest.accessToken,
         listAccountRolesRequest.accountId,
         listAccountRolesRequest.maxResults,
         listAccountRolesRequest.nextToken,
-      ])
-      .then((response) => {
-        accountRoles.push(...response.roleList);
+      ]);
+      accountRoles.push(...(response.roleList ?? []));
+      listAccountRolesRequest.nextToken = response.nextToken || undefined;
+    } while (listAccountRolesRequest.nextToken);
 
-        if (response.nextToken !== null && response.nextToken !== undefined) {
-          listAccountRolesRequest.nextToken = response.nextToken;
-          this.recursiveListRoles(accountRoles, listAccountRolesRequest, resolve, reject);
-        } else {
-          resolve();
-        }
-      })
-      .catch((error) => reject(error));
+    return accountRoles;
   }
 
   private findOldSession(accountInfo: AccountInfo, accountRole: RoleInfo): { region: string; profileId: string } {

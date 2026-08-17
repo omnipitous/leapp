@@ -20,7 +20,12 @@ export class ThrottleService {
   async callWithThrottle(...params: any): Promise<any> {
     const callId = this.totalCalls++;
     while (this.lastCallId !== callId - 1 || this.pendingCalls >= this.maxCallsPerSecond || Date.now() - this.lastCallTime < this.minDelay) {
-      await this.waitFor(1);
+      // Sleep until close to this call's estimated slot instead of polling every
+      // millisecond: with hundreds of queued calls (e.g. a large AWS organization)
+      // a 1ms poll across all waiters would keep the CPU busy for the whole sync
+      const callsAhead = callId - this.lastCallId - 1;
+      const delayUntilNextSlot = this.minDelay - (Date.now() - this.lastCallTime);
+      await this.waitFor(Math.max(callsAhead * this.minDelay, delayUntilNextSlot, 5));
     }
     this.pendingCalls++;
     this.lastCallId = callId;

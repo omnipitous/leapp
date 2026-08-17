@@ -20,6 +20,7 @@ export const constants = {
   credentialsDestination: ".aws/credentials",
   defaultRegion: "us-east-1",
   maxSsoTps: 5, // Transaction per second for AWS SSO endpoint
+  ssoPortalListMaxResults: 100, // Page size for SSO portal ListAccounts/ListAccountRoles (AWS maximum, fewer calls for large orgs)
 
   //Azure
   azureMsalCacheFile: ".azure/msal_token_cache.json",
