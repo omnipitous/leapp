@@ -35,6 +35,7 @@
     "nightly-linux": "gushio gushio/target-nightly.js linux"
   },
   "build": {
+    "npmRebuild": false,
     "protocols": {
       "name": "leapp-deep-linking",
       "schemes": [

@@ -73,13 +73,36 @@ on **Node 26**. Landmines that were solved — do not regress these:
 | Vendored `electron/context-menu.ts` requires `slice-ansi` without declaring it; hoisting can serve an ESM-only copy that crashes Electron main | `slice-ansi@4.0.0` (CJS) declared as a real dependency of desktop-app |
 | jest broke with "onExit is not a function" | stale nested `signal-exit@4` under `write-file-atomic@3`; override pins v3. **General rule:** an aborted pnpm install can leave stale wrong-version nested dirs — if you see bizarre ESM/export errors, wipe `node_modules` and reinstall before debugging |
 
-Legacy `package-lock.json` files remain for historical reference but are **dead** —
-`pnpm-lock.yaml` is authoritative. Never run `npm install` here.
+The legacy `package-lock.json` files were **removed**: besides being dead
+(`pnpm-lock.yaml` is authoritative), their presence made electron-builder pick its npm
+dependency collector, which cannot read a pnpm-installed tree and fails packaging with
+"dependency path is undefined". Never run `npm install` here and never reintroduce them.
+
+## Windows packaging (NSIS installer) — works, but know the landmines
+
+`cd packages/desktop-app && pnpm exec electron-builder build --win --x64 --publish never`
+(after a `configuration production` gushio build). Things that were required to make it work:
+
+- **`npmRebuild: false`** in the build config: electron-builder's own native rebuild uses an
+  old node-gyp that fails on VS 2026; our postinstall script already builds dpapi correctly.
+- **Root package.json must declare `"workspaces": ["packages/*"]`** and must NOT share a
+  name with the desktop-app package (root is `leapp-monorepo`): electron-builder's
+  dependency collector shells out to `npm ls`, which needs the workspaces declaration to
+  parse `workspace:*` specs — and a root/child name collision makes npm silently collapse
+  the child, yielding an app packaged with ZERO node_modules that dies at startup.
+- **Root depends on `"Leapp": "workspace:*"`** so pnpm materializes the
+  `node_modules/Leapp` symlink npm ls needs to see the desktop-app subtree.
+- **`patches/app-builder-lib@26.0.12.patch`** fixes upstream's package-manager detection
+  (its lockfile probe returned "npm" instead of null, making the monorepo walk-up dead code).
+- **winCodeSign extraction fails on Windows** without Developer Mode (the archive contains
+  macOS symlinks; 7z exits 2). If a fresh machine hits "cannot execute exit status 2" around
+  winCodeSign: extract the failed numbered directory in
+  `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\` and rename it to `winCodeSign-2.6.0`
+  (the Windows tools inside extract fine; only darwin symlinks fail).
+- Never run packaging while a dev instance of the app is running: it locks dpapi.node.
 
 ## Known gaps / untested
 
-- **electron-builder packaging** (`release-win` → NSIS installer) is untested; only dev
-  build/run is proven. Expect to revisit icon paths and the dpapi/keytar rebuild story there.
 - **Azure integration** is untested end-to-end (dpapi builds and loads, but no Azure tenant
   was exercised).
 - Dev-build habit: **close the running app before `build-dev`** — the build wipes
