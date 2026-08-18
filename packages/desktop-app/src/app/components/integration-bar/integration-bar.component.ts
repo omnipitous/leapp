@@ -12,6 +12,7 @@ import { BehaviouralSubjectService } from "@noovolari/leapp-core/services/behavi
 import { AwsSsoRoleService } from "@noovolari/leapp-core/services/session/aws/aws-sso-role-service";
 import { AppProviderService } from "../../services/app-provider.service";
 import { AwsSsoOidcService } from "@noovolari/leapp-core/services/aws-sso-oidc.service";
+import { AwsSsoIntegrationService } from "@noovolari/leapp-core/services/integration/aws-sso-integration-service";
 import { LoggedEntry, LoggedException, LogLevel, LogService } from "@noovolari/leapp-core/services/log-service";
 import { MessageToasterService, ToastLevel } from "../../services/message-toaster.service";
 import { WindowService } from "../../services/window.service";
@@ -253,8 +254,12 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
       });
     } catch (err) {
       this.awsSsoOidcService.interrupt();
-      await this.logout(integrationId);
-      const errorMessage = `Error during SSO Login: ${err.toString()}`;
+      // Only tear down the integration when the token itself is rejected by AWS; a transient
+      // error (throttling, network) must not log the user out and destroy a valid token
+      if (AwsSsoIntegrationService.isAuthenticationError(err)) {
+        await this.logout(integrationId);
+      }
+      const errorMessage = `Error during SSO sync: ${err.message ?? err.toString()}`;
       this.loggingService.log(new LoggedException(errorMessage, this, LogLevel.error));
       this.messageToasterService.toast(errorMessage, ToastLevel.error);
     } finally {

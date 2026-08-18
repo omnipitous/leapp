@@ -77,7 +77,14 @@ export class AppNativeService implements INativeService {
       this.notification = window.require("@electron/remote").Notification;
       this.nodeIpc = window.require("node-ipc");
       this.process = (window as any).process;
-      this.msalEncryptionService = new MsalEncryptionService(window.require("@noovolari/dpapi-addon"));
+      try {
+        this.msalEncryptionService = new MsalEncryptionService(window.require("@noovolari/dpapi-addon"));
+      } catch (error) {
+        // dpapi-addon is a native module used only by the Azure integration; a missing or
+        // unbuilt binary must not prevent the app from starting (AWS flows don't need it)
+        console.error("Unable to load @noovolari/dpapi-addon; the Azure integration will be unavailable.", error);
+        this.msalEncryptionService = undefined;
+      }
       this.requireModule = window.require("require-module");
       this.hashElement = window.require("folder-hash");
       this.crypto = window.require("crypto");

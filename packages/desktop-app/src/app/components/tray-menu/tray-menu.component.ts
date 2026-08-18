@@ -67,6 +67,36 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
   }
 
   async generateMenu(): Promise<void> {
+    try {
+      await this.doGenerateMenu();
+    } catch (error) {
+      // The tray menu is rebuilt on every session change; a transient failure here must not
+      // surface as an app error toast — log it and keep the previous menu until the next rebuild
+      this.loggingService.log(new LoggedEntry(`Tray menu update failed: ${error.message}`, this, LogLevel.warn, false, error.stack));
+    }
+  }
+
+  /**
+   * Remove session and credential file before exiting program
+   */
+  async cleanBeforeExit(): Promise<void> {
+    // Check if we are here
+    this.loggingService.log(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
+    // We need the Try/Catch as we have the possibility to call the method without sessions
+    try {
+      await this.appProviderService.sessionManagementService.stopAllSessions();
+    } catch (err) {
+      this.loggingService.log(new LoggedEntry("No sessions to stop, skipping...", this, LogLevel.error, false, err.stack));
+    }
+    // Finally quit
+    this.appService.quit();
+  }
+
+  ngOnDestroy(): void {
+    this.subscribed.unsubscribe();
+  }
+
+  private async doGenerateMenu(): Promise<void> {
     const sessionSubmenuThreshold = 10;
     this.voices = [];
     this.sessions = [];
@@ -189,63 +219,36 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
     this.currentTray.setContextMenu(contextMenu);
   }
 
-  /**
-   * Remove session and credential file before exiting program
-   */
-  async cleanBeforeExit(): Promise<void> {
-    // Check if we are here
-    this.loggingService.log(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
-    // We need the Try/Catch as we have the possibility to call the method without sessions
-    try {
-      await this.appProviderService.sessionManagementService.stopAllSessions();
-    } catch (err) {
-      this.loggingService.log(new LoggedEntry("No sessions to stop, skipping...", this, LogLevel.error, false, err.stack));
-    }
-    // Finally quit
-    this.appService.quit();
-  }
-
-  ngOnDestroy(): void {
-    this.subscribed.unsubscribe();
+  // Menu icons are re-read from disk on every menu rebuild: a momentarily missing file
+  // (e.g. a dev rebuild repopulating dist) makes Electron's buildFromTemplate throw a
+  // "conversion failure" for the entire menu, so omit the icon rather than crash
+  private menuIcon(fileName: string): string | undefined {
+    const iconPath = __dirname + `/assets/images/${fileName}.png`;
+    return this.electronService.fs.existsSync(iconPath) ? iconPath : undefined;
   }
 
   private createSessionVoice(session: Session) {
-    let icon = "";
+    let icon: string | undefined;
     let label = "";
     const profile = this.appProviderService.namedProfileService.getNamedProfiles().filter((p) => p.id === this.getProfileId(session))[0];
     const iconValue = profile && profile.name === "default" ? "home" : "user";
+    const isActive = session.status === SessionStatus.active;
     switch (session.type) {
       case SessionType.awsIamUser:
-        // eslint-disable-next-line max-len
-        icon =
-          session.status === SessionStatus.active
-            ? __dirname + `/assets/images/${iconValue}-online.png`
-            : __dirname + `/assets/images/${iconValue}-offline.png`;
+        icon = this.menuIcon(`${iconValue}-${isActive ? "online" : "offline"}`);
         label = "  " + session.sessionName + " - " + "iam user";
         break;
       case SessionType.awsIamRoleFederated:
       case SessionType.awsSsoRole:
-        // eslint-disable-next-line max-len
-        icon =
-          session.status === SessionStatus.active
-            ? __dirname + `/assets/images/${iconValue}-online.png`
-            : __dirname + `/assets/images/${iconValue}-offline.png`;
+        icon = this.menuIcon(`${iconValue}-${isActive ? "online" : "offline"}`);
         label = "  " + session.sessionName + " - " + (session as AwsIamRoleFederatedSession).roleArn.split("/")[1];
         break;
       case SessionType.awsIamRoleChained:
-        // eslint-disable-next-line max-len
-        icon =
-          session.status === SessionStatus.active
-            ? __dirname + `/assets/images/${iconValue}-online.png`
-            : __dirname + `/assets/images/${iconValue}-offline.png`;
+        icon = this.menuIcon(`${iconValue}-${isActive ? "online" : "offline"}`);
         label = "  " + session.sessionName + " - " + (session as AwsIamRoleChainedSession).roleArn.split("/")[1];
         break;
       case SessionType.azure:
-        // eslint-disable-next-line max-len
-        icon =
-          session.status === SessionStatus.active
-            ? __dirname + `/assets/images/icon-online-azure.png`
-            : __dirname + `/assets/images/icon-offline.png`;
+        icon = this.menuIcon(isActive ? "icon-online-azure" : "icon-offline");
         label = "  " + session.sessionName;
     }
     return {
