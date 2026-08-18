@@ -26,5 +26,3 @@ overrides:
   # The hoisted linker wrongly nests signal-exit 4.x under write-file-atomic 3.x
   # (which needs the v3 function-style export), breaking jest's transform cache
   "write-file-atomic>signal-exit": "3.0.7"
-patchedDependencies:
-  app-builder-lib@26.0.12: patches/app-builder-lib@26.0.12.patch

@@ -83,23 +83,48 @@ dependency collector, which cannot read a pnpm-installed tree and fails packagin
 `cd packages/desktop-app && pnpm exec electron-builder build --win --x64 --publish never`
 (after a `configuration production` gushio build). Things that were required to make it work:
 
+- **electron-builder is pinned to 24.13.3 — do not bump to 26.x casually.** 26's dependency
+  collector shells out to `npm ls` and silently DROPS transitive production deps whose
+  canonical npm-ls position gets deduped under a dev-only tree (we shipped an app missing
+  `end-of-stream`, `yauzl`, `buffer` and 40+ others → blank window at startup). 24.x walks
+  node_modules on disk and packages the correct closure. If you ever upgrade, diff the
+  asar's node_modules against the app's real production closure before trusting it.
 - **`npmRebuild: false`** in the build config: electron-builder's own native rebuild uses an
   old node-gyp that fails on VS 2026; our postinstall script already builds dpapi correctly.
-- **Root package.json must declare `"workspaces": ["packages/*"]`** and must NOT share a
-  name with the desktop-app package (root is `leapp-monorepo`): electron-builder's
-  dependency collector shells out to `npm ls`, which needs the workspaces declaration to
-  parse `workspace:*` specs — and a root/child name collision makes npm silently collapse
-  the child, yielding an app packaged with ZERO node_modules that dies at startup.
-- **Root depends on `"Leapp": "workspace:*"`** so pnpm materializes the
-  `node_modules/Leapp` symlink npm ls needs to see the desktop-app subtree.
-- **`patches/app-builder-lib@26.0.12.patch`** fixes upstream's package-manager detection
-  (its lockfile probe returned "npm" instead of null, making the monorepo walk-up dead code).
+- Root package.json declares `"workspaces": ["packages/*"]`, is named `leapp-monorepo`
+  (must not collide with the desktop-app's name "Leapp"), and depends on
+  `"Leapp": "workspace:*"`. These were required by eb 26's npm-ls collector and are kept
+  because they are harmless and make any npm-based tooling see the workspace correctly.
 - **winCodeSign extraction fails on Windows** without Developer Mode (the archive contains
   macOS symlinks; 7z exits 2). If a fresh machine hits "cannot execute exit status 2" around
   winCodeSign: extract the failed numbered directory in
   `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\` and rename it to `winCodeSign-2.6.0`
   (the Windows tools inside extract fine; only darwin symlinks fail).
 - Never run packaging while a dev instance of the app is running: it locks dpapi.node.
+- **Always smoke-test the packaged app before installing**: run
+  `release\win-unpacked\Leapp.exe --enable-logging=file --log-file=<path>` and grep the log
+  for "Cannot find module" — a window with the right title can still be a dead blank renderer.
+
+## Auto-updates — served from this fork's GitHub releases
+
+The official update server (asset.noovolari.com) is dead. The app now checks
+**github.com/omnipitous/leapp releases** (electron-updater github provider, configured in
+`electron/main.ts` and `build.publish`). Installed apps check at startup and every 10
+minutes; a 404 when no release exists is logged and harmless.
+
+To ship an update to installed apps:
+
+1. Bump `version` in `packages/desktop-app/package.json` (updates only apply upward).
+2. Build: gushio `target-build.js "configuration production"`, then
+   `pnpm exec electron-builder build --win --x64 --publish never`.
+3. Create a GitHub **release** (not draft/prerelease) on omnipitous/leapp with tag
+   `v<version>` and upload all three artifacts from `packages/desktop-app/release/`:
+   `Leapp Setup <version>.exe`, `.exe.blockmap`, and `latest.yml`.
+   (Or let electron-builder do it: `--publish always` with a `GH_TOKEN` that has repo
+   write access.)
+
+Builds are unsigned; `win.verifyUpdateCodeSignature` is already false, so electron-updater
+accepts them. Windows SmartScreen may still warn on first run of a downloaded installer.
 
 ## Known gaps / untested
 

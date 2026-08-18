@@ -76,10 +76,13 @@ const buildAutoUpdater = (win: any): void => {
 
   const minutes = 10;
 
+  // The original Noovolari update server (asset.noovolari.com) is dead; this fork
+  // self-updates from its own GitHub releases instead. Publishing a release with the
+  // NSIS artifacts (exe + blockmap + latest.yml) makes installed apps offer the update.
   const data = {
-    provider: "generic",
-    url: "https://asset.noovolari.com/latest",
-    channel: "latest",
+    provider: "github",
+    owner: "omnipitous",
+    repo: "leapp",
   };
   autoUpdater.setFeedURL(data);
 
