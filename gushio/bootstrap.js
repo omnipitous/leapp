@@ -18,7 +18,7 @@ module.exports = {
         console.log('\n\n')
         console.log(`installing dependencies for ${packageName}...`)
         shellJs.cd(path.join(__dirname, '..', 'packages', packageName))
-        let result = shellJs.exec('npm install')
+        let result = shellJs.exec('pnpm install')
         if (result.code !== 0) {
           throw new Error(result.stderr)
         }
@@ -26,7 +26,7 @@ module.exports = {
         if (packageName === 'core') {
           // builds the core
           shellJs.cd(path.join(__dirname, '../packages', packageName))
-          let result = shellJs.exec('npm run build')
+          let result = shellJs.exec('pnpm run build')
           if (result.code !== 0) {
             throw new Error(result.stderr)
           }

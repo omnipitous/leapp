@@ -27,7 +27,7 @@ module.exports = {
       await makeDirFunction(path, '../dist/leapp-client')
       await copyFunction(path, '../src/assets/icons', '../dist/leapp-client')
 
-      let result = shellJs.exec('npx electron-rebuild -f -w @noovolari/dpapi-addon')
+      let result = shellJs.exec('node scripts/rebuild-dpapi-for-electron.js')
       if (result.code !== 0) {
         throw new Error(result.stderr)
       }

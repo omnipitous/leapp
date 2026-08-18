@@ -1,0 +1,28 @@
+packages:
+  - packages/*
+
+# pnpm 10 blocks dependency build scripts unless allowlisted.
+# These need their install scripts to function:
+#  - electron: downloads the Electron binary
+#  - keytar / @noovolari/dpapi-addon: native modules (prebuild-install / node-gyp)
+#  - esbuild: downloads its platform binary (used by @angular-devkit/build-angular)
+onlyBuiltDependencies:
+  - electron
+  - keytar
+  - esbuild
+  - electron-winstaller
+
+# dpapi-addon's own install script builds for the local Node ABI, which is useless
+# (the app runs in Electron) and its old NAN source doesn't compile against Node 26
+# headers anyway. The desktop-app postinstall (scripts/rebuild-dpapi-for-electron.js)
+# builds it against the Electron headers instead, which works.
+ignoredBuiltDependencies:
+  - "@noovolari/dpapi-addon"
+
+# node-gyp 9 (pinned by the legacy electron-rebuild) cannot detect Visual Studio
+# 2026 (v18) or run under Python 3.12+; node-gyp 13 handles both.
+overrides:
+  node-gyp: ^13.0.1
+  # The hoisted linker wrongly nests signal-exit 4.x under write-file-atomic 3.x
+  # (which needs the v3 function-style export), breaking jest's transform cache
+  "write-file-atomic>signal-exit": "3.0.7"

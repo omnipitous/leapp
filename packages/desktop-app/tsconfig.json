@@ -18,17 +18,17 @@
     "sourceMap": true,
     "target": "ES2019",
     "typeRoots": [
-      "../node_modules/@types"
+      "../../node_modules/@types"
     ],
     "paths": {
       "stream": [
-        "../node_modules/stream-browserify"
+        "../../node_modules/stream-browserify"
       ],
       "assert": [
-        "../node_modules/assert"
+        "../../node_modules/assert"
       ],
       "fs": [
-        "../node_modules/fs-web"
+        "../../node_modules/fs-web"
       ]
     },
     "esModuleInterop": true,

@@ -28,7 +28,7 @@ module.exports = {
 
         // clean additional directories (dist, ...)
         shellJs.cd(path.join(__dirname, '../packages', packageName))
-        let result = shellJs.exec('npm run clean')
+        let result = shellJs.exec('pnpm run clean')
         if (result.code !== 0) {
           throw new Error(result.stderr)
         }
