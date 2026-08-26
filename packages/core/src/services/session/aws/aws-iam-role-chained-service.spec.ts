@@ -189,7 +189,7 @@ describe("AwsIamRoleChainedService", () => {
     const awsIamRoleChainedService = new AwsIamRoleChainedService(null, null, null, null, null, null);
     jest.spyOn(awsIamRoleChainedService, "generateCredentials").mockImplementation(jest.fn());
     await awsIamRoleChainedService.generateCredentialsProxy("fake-session-id");
-    expect(awsIamRoleChainedService.generateCredentials).toHaveBeenCalledWith("fake-session-id");
+    expect(awsIamRoleChainedService.generateCredentials).toHaveBeenCalledWith("fake-session-id", true);
   });
 
   test("generateCredentials - generate a credential set", async () => {

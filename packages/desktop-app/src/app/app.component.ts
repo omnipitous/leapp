@@ -228,7 +228,28 @@ export class AppComponent implements OnInit {
     this.appService.closeAllMenuTriggers();
   }
 
-  private timerFunction(rotationService: RotationService, integrationIsOnlineStateRefreshService: IntegrationIsOnlineStateRefreshService): void {
+  private async timerFunction(
+    rotationService: RotationService,
+    integrationIsOnlineStateRefreshService: IntegrationIsOnlineStateRefreshService
+  ): Promise<void> {
+    // Before rotating, disconnect integrations whose SSO token has expired: their sessions are
+    // stopped visibly and the user is notified, WITHOUT auto-opening a login window (the user may
+    // be away, and an unattended device-code window expires and used to wedge the whole app)
+    try {
+      const disconnectedAliases = await this.awsSsoIntegrationService.disconnectExpiredIntegrations();
+      for (const alias of disconnectedAliases) {
+        this.loggingService.log(
+          new LoggedEntry(
+            `AWS SSO login for "${alias}" has expired: its sessions were stopped. Use the integration's Login to reconnect.`,
+            this,
+            LogLevel.warn,
+            true
+          )
+        );
+      }
+    } catch (error) {
+      this.loggingService.log(new LoggedEntry(error.message ?? `${error}`, this, LogLevel.warn, false, error.stack));
+    }
     rotationService.rotate();
     integrationIsOnlineStateRefreshService.refreshIsOnlineState();
   }

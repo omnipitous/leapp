@@ -207,7 +207,7 @@ describe("AwsSsoRoleService", () => {
     const awsSsoRoleService = new AwsSsoRoleService(null, null, null, null, null, null, { appendListener: jest.fn(() => {}) } as any);
     jest.spyOn(awsSsoRoleService, "generateCredentials").mockImplementation(jest.fn());
     await awsSsoRoleService.generateCredentialsProxy("fake-session-id");
-    expect(awsSsoRoleService.generateCredentials).toHaveBeenCalledWith("fake-session-id");
+    expect(awsSsoRoleService.generateCredentials).toHaveBeenCalledWith("fake-session-id", true);
   });
 
   test("generateCredentials", async () => {
@@ -246,7 +246,9 @@ describe("AwsSsoRoleService", () => {
     expect((awsSsoRoleService as any).awsIntegrationDelegate.getAccessToken).toHaveBeenCalledWith(
       session.awsSsoConfigurationId,
       awsSsoConfiguration.region,
-      awsSsoConfiguration.portalUrl
+      awsSsoConfiguration.portalUrl,
+      false,
+      true
     );
     expect((awsSsoRoleService as any).awsIntegrationDelegate.getRoleCredentials).toHaveBeenCalledWith(
       accessToken,
@@ -336,5 +338,54 @@ describe("AwsSsoRoleService", () => {
     jest.spyOn(awsSsoRoleService as any, "removeSecrets");
     awsSsoRoleService.removeSecrets("");
     expect(awsSsoRoleService.removeSecrets).toHaveBeenCalled();
+  });
+
+  test("generateCredentials - non-interactive never forces a token refresh and expires the integration on auth errors", async () => {
+    const session = { profileName: "fake-profile-name", roleArn: "fake-role-arn", awsSsoConfigurationId: "fake-aws-configuration-id" };
+    const awsSsoConfiguration = { region: "fake-region", portalUrl: "fake-portal-url", alias: "fake-alias" };
+    const repository = {
+      getSessionById: jest.fn(() => session),
+      getAwsSsoIntegration: jest.fn(() => awsSsoConfiguration),
+      unsetAwsSsoIntegrationExpiration: jest.fn(),
+    } as any;
+    const awsSsoRoleService = new AwsSsoRoleService(null, repository, null, null, null, null, { appendListener: jest.fn(() => {}) } as any);
+    const authError = Object.assign(new Error("unauthorized"), { name: "UnauthorizedException" });
+    const getAccessToken = jest.fn(async () => "stale-token");
+    (awsSsoRoleService as any).awsIntegrationDelegate = {
+      getAccessToken,
+      getRoleCredentials: jest.fn(async () => {
+        throw authError;
+      }),
+    };
+
+    await expect(awsSsoRoleService.generateCredentials("fake-session-id", false)).rejects.toBe(authError);
+
+    // Non-interactive mode must not retry with forceRefresh (which would open a login window)
+    expect(getAccessToken).toHaveBeenCalledTimes(1);
+    expect(getAccessToken).toHaveBeenCalledWith(session.awsSsoConfigurationId, "fake-region", "fake-portal-url", false, false);
+    // The server-side rejected token expires the integration locally so the next timer tick
+    // disconnects it visibly instead of retrying forever
+    expect(repository.unsetAwsSsoIntegrationExpiration).toHaveBeenCalledWith(session.awsSsoConfigurationId);
+  });
+
+  test("generateCredentials - non-interactive rethrows non-auth errors without touching the integration", async () => {
+    const session = { profileName: "fake-profile-name", roleArn: "fake-role-arn", awsSsoConfigurationId: "fake-aws-configuration-id" };
+    const awsSsoConfiguration = { region: "fake-region", portalUrl: "fake-portal-url", alias: "fake-alias" };
+    const repository = {
+      getSessionById: jest.fn(() => session),
+      getAwsSsoIntegration: jest.fn(() => awsSsoConfiguration),
+      unsetAwsSsoIntegrationExpiration: jest.fn(),
+    } as any;
+    const awsSsoRoleService = new AwsSsoRoleService(null, repository, null, null, null, null, { appendListener: jest.fn(() => {}) } as any);
+    const networkError = new Error("getaddrinfo ENOTFOUND");
+    (awsSsoRoleService as any).awsIntegrationDelegate = {
+      getAccessToken: jest.fn(async () => "valid-token"),
+      getRoleCredentials: jest.fn(async () => {
+        throw networkError;
+      }),
+    };
+
+    await expect(awsSsoRoleService.generateCredentials("fake-session-id", false)).rejects.toBe(networkError);
+    expect(repository.unsetAwsSsoIntegrationExpiration).not.toHaveBeenCalled();
   });
 });

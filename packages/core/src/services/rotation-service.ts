@@ -9,7 +9,9 @@ export class RotationService {
     activeSessions.forEach((session) => {
       if (session.expired()) {
         const concreteSessionService = this.sessionServiceFactory.getSessionService(session.type);
-        concreteSessionService.rotate(session.sessionId).then((_) => {});
+        // A failed rotation already deactivates the session visibly (sessionError); an unhandled
+        // rejection here would surface as a spurious global error toast per session per tick
+        concreteSessionService.rotate(session.sessionId).catch((_) => {});
       }
     });
   }

@@ -20,6 +20,7 @@ export class AwsSsoOidcService {
   private loginMutex: boolean;
   private timeoutOccurred: boolean;
   private interruptOccurred: boolean;
+  private errorOccurred: Error;
 
   constructor(
     private verificationWindowService: IAwsSsoOidcVerificationWindowService,
@@ -33,6 +34,7 @@ export class AwsSsoOidcService {
     this.loginMutex = false;
     this.timeoutOccurred = false;
     this.interruptOccurred = false;
+    this.errorOccurred = null;
   }
 
   getListeners(): BrowserWindowClosing[] {
@@ -52,19 +54,41 @@ export class AwsSsoOidcService {
       this.setIntervalQueue = [];
       this.timeoutOccurred = false;
       this.interruptOccurred = false;
+      this.errorOccurred = null;
 
-      const registerClientResponse = await this.registerSsoOidcClient();
-      const startDeviceAuthorizationResponse = await this.startDeviceAuthorization(registerClientResponse, portalUrl);
-      const windowModality = this.repository.getAwsSsoIntegration(configurationId).browserOpening;
-      const verificationResponse = await this.verificationWindowService.openVerificationWindow(
-        registerClientResponse,
-        startDeviceAuthorizationResponse,
-        windowModality,
-        () => this.closeVerificationWindow()
-      );
+      // Any failure in this flow MUST release the mutex and signal queued waiters, otherwise
+      // every later login queues forever behind a dead one and only a force-kill recovers the app
       try {
-        this.generateSSOTokenResponse = await this.createToken(configurationId, verificationResponse);
+        const registerClientResponse = await this.registerSsoOidcClient();
+        const startDeviceAuthorizationResponse = await this.startDeviceAuthorization(registerClientResponse, portalUrl);
+        const windowModality = this.repository.getAwsSsoIntegration(configurationId).browserOpening;
+
+        // The device code has a fixed lifetime; once it elapses no verification can succeed,
+        // so give the whole verification+token phase a deadline. The verification window may
+        // never settle its promise (e.g. the AWS page just displays an error), and without
+        // this deadline that would leave the mutex locked forever.
+        const deviceCodeLifetimeSeconds = startDeviceAuthorizationResponse.expiresIn || 600;
+        let deadlineId: any;
+        const deadline = new Promise<never>((_, reject) => {
+          deadlineId = setTimeout(() => {
+            this.timeoutOccurred = true;
+            reject(new LoggedException("AWS SSO login expired before it was completed. Please retry the login procedure.", this, LogLevel.warn));
+          }, (deviceCodeLifetimeSeconds + 30) * 1000);
+        });
+
+        try {
+          const verificationResponse = await Promise.race([
+            this.verificationWindowService.openVerificationWindow(registerClientResponse, startDeviceAuthorizationResponse, windowModality, () =>
+              this.closeVerificationWindow()
+            ),
+            deadline,
+          ]);
+          this.generateSSOTokenResponse = await Promise.race([this.createToken(configurationId, verificationResponse), deadline]);
+        } finally {
+          clearTimeout(deadlineId);
+        }
       } catch (err) {
+        this.errorOccurred = err;
         this.loginMutex = false;
         throw err;
       }
@@ -97,6 +121,15 @@ export class AwsSsoOidcService {
             const resolvedIndex = this.setIntervalQueue.indexOf(resolved);
             this.setIntervalQueue.splice(resolvedIndex, 1);
             reject(new LoggedException("AWS SSO Timeout occurred. Please redo login procedure.", this, LogLevel.error));
+          } else if (this.errorOccurred) {
+            // The login this waiter piggybacked on failed for a non-timeout reason
+            // (network error, window closed, token rejected): fail the waiter too
+            // instead of leaving it polling forever
+            clearInterval(resolved);
+
+            const resolvedIndex = this.setIntervalQueue.indexOf(resolved);
+            this.setIntervalQueue.splice(resolvedIndex, 1);
+            reject(this.errorOccurred);
           }
         }, repeatEvery);
 

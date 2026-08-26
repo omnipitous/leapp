@@ -3,6 +3,7 @@ import { AwsSsoIntegrationService } from "./aws-sso-integration-service";
 import { IntegrationType } from "../../models/integration-type";
 import { Session } from "../../models/session";
 import { SessionType } from "../../models/session-type";
+import { SessionStatus } from "../../models/session-status";
 import { constants } from "../../models/constants";
 import { ThrottleService } from "../throttle-service";
 import { AccountInfo, ListAccountRolesCommandInput, RoleInfo } from "@aws-sdk/client-sso";
@@ -1031,5 +1032,83 @@ describe("AwsSsoIntegrationService", () => {
     });
 
     await expect(awsIntegrationService.getSessions("fake-integration-id", "fake-access-token", "fake-region")).rejects.toBe(authError);
+  });
+
+  test("getAccessToken - non-interactive with an expired token throws instead of opening a login window", async () => {
+    const integration = { alias: "fake-alias" };
+    const repository = { getAwsSsoIntegration: jest.fn(() => integration) } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, null, null, null, null, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => true);
+    awsIntegrationService.login = jest.fn();
+
+    await expect(awsIntegrationService.getAccessToken("fake-integration-id", "fake-region", "fake-portal-url", false, false)).rejects.toThrow(
+      'AWS SSO integration "fake-alias" is disconnected'
+    );
+    expect(awsIntegrationService.login).not.toHaveBeenCalled();
+  });
+
+  test("getAccessToken - non-interactive with a valid token returns it from the keychain", async () => {
+    const awsIntegrationService = new AwsSsoIntegrationService(null, null, null, null, null, null, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => false);
+    awsIntegrationService.getAccessTokenFromKeychain = jest.fn(async () => "keychain-token");
+
+    const token = await awsIntegrationService.getAccessToken("fake-integration-id", "fake-region", "fake-portal-url", false, false);
+    expect(token).toBe("keychain-token");
+  });
+
+  test("disconnectExpiredIntegrations - stops sessions of expired integrations and reports them once", async () => {
+    const expiredIntegration = { id: "expired-id", alias: "expired-alias", accessTokenExpiration: new Date(1999, 1, 1).toISOString() };
+    const validIntegration = { id: "valid-id", alias: "valid-alias", accessTokenExpiration: new Date(3000, 1, 1).toISOString() };
+    const neverConnected = { id: "offline-id", alias: "offline-alias", accessTokenExpiration: undefined };
+    const sessions = [
+      { sessionId: "session-1", type: "awsSsoRole", status: SessionStatus.active },
+      { sessionId: "session-2", type: "awsSsoRole", status: SessionStatus.inactive },
+    ];
+    const repository = {
+      listAwsSsoIntegrations: jest.fn(() => [expiredIntegration, validIntegration, neverConnected]),
+      listAzureIntegrations: jest.fn(() => []),
+      getAwsSsoIntegrationSessions: jest.fn(() => sessions),
+      unsetAwsSsoIntegrationExpiration: jest.fn(),
+    } as any;
+    const keyChainService = { deleteSecret: jest.fn(async () => true) } as any;
+    const behaviouralNotifier = { setIntegrations: jest.fn() } as any;
+    const sessionService = { stop: jest.fn(async () => {}) };
+    const sessionFactory = { getSessionService: jest.fn(() => sessionService) } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(
+      repository,
+      keyChainService,
+      behaviouralNotifier,
+      null,
+      sessionFactory,
+      null,
+      null
+    ) as any;
+    awsIntegrationService.setOnline = jest.fn(async () => {});
+
+    const disconnected = await awsIntegrationService.disconnectExpiredIntegrations();
+
+    expect(disconnected).toEqual(["expired-alias"]);
+    // Only the ACTIVE session of the expired integration is stopped
+    expect(sessionService.stop).toHaveBeenCalledTimes(1);
+    expect(sessionService.stop).toHaveBeenCalledWith("session-1");
+    expect(repository.getAwsSsoIntegrationSessions).toHaveBeenCalledWith("expired-id");
+    // Clearing the expiration makes the disconnection one-shot (no repeated toasts every tick)
+    expect(repository.unsetAwsSsoIntegrationExpiration).toHaveBeenCalledWith("expired-id");
+    expect(expiredIntegration.accessTokenExpiration).toBeUndefined();
+    expect(awsIntegrationService.setOnline).toHaveBeenCalledWith(expiredIntegration, false);
+    expect(keyChainService.deleteSecret).toHaveBeenCalled();
+    expect(behaviouralNotifier.setIntegrations).toHaveBeenCalled();
+  });
+
+  test("disconnectExpiredIntegrations - does nothing when no integration is expired", async () => {
+    const validIntegration = { id: "valid-id", alias: "valid-alias", accessTokenExpiration: new Date(3000, 1, 1).toISOString() };
+    const repository = { listAwsSsoIntegrations: jest.fn(() => [validIntegration]) } as any;
+    const behaviouralNotifier = { setIntegrations: jest.fn() } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, behaviouralNotifier, null, null, null, null) as any;
+
+    const disconnected = await awsIntegrationService.disconnectExpiredIntegrations();
+
+    expect(disconnected).toEqual([]);
+    expect(behaviouralNotifier.setIntegrations).not.toHaveBeenCalled();
   });
 });

@@ -51,7 +51,10 @@ export abstract class AwsSessionService extends SessionService {
       // We don't need to rotate credentials when in  credential process mode
       if (this.repository.getWorkspace().credentialMethod === constants.credentialFile) {
         this.sessionLoading(sessionId);
-        const credentialsInfo = await this.generateCredentials(sessionId);
+        // Rotation runs unattended on a background timer: it must never open an interactive
+        // login (the user may be away and the login window would expire and wedge the app).
+        // If credentials can't be refreshed silently, the session stops visibly instead.
+        const credentialsInfo = await this.generateCredentials(sessionId, false);
         await this.applyCredentials(sessionId, credentialsInfo);
         this.sessionActivated(sessionId);
       }
@@ -170,9 +173,11 @@ export abstract class AwsSessionService extends SessionService {
 
   abstract getAccountNumberFromCallerIdentity(session: Session): Promise<string>;
 
-  abstract generateCredentialsProxy(sessionId: string): Promise<CredentialsInfo>;
+  // interactive=false means "never prompt the user" (no SSO login window, no MFA dialog):
+  // implementations must fail instead of prompting. Used by background credential rotation.
+  abstract generateCredentialsProxy(sessionId: string, interactive?: boolean): Promise<CredentialsInfo>;
 
-  abstract generateCredentials(sessionId: string): Promise<CredentialsInfo>;
+  abstract generateCredentials(sessionId: string, interactive?: boolean): Promise<CredentialsInfo>;
 
   abstract applyCredentials(sessionId: string, credentialsInfo: CredentialsInfo): Promise<void>;
 

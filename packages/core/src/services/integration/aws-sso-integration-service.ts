@@ -27,6 +27,8 @@ import { ThrottleService } from "../throttle-service";
 import { IKeychainService } from "../../interfaces/i-keychain-service";
 import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
 import { LoggedException, LogLevel } from "../log-service";
+import { isAwsAuthenticationError } from "../aws-auth-error";
+import { SessionStatus } from "../../models/session-status";
 
 const portalUrlValidationRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
 
@@ -60,8 +62,7 @@ export class AwsSsoIntegrationService implements IIntegrationService {
   // AWS can invalidate an access token server-side (e.g. session duration changed by an administrator,
   // token revoked) before the expiration time Leapp saved locally, so clock-based checks are not enough.
   static isAuthenticationError(error: any): boolean {
-    const authErrorNames = ["UnauthorizedException", "UnauthorizedClientException", "InvalidGrantException", "ExpiredTokenException"];
-    return authErrorNames.includes(error?.name) || error?.$metadata?.httpStatusCode === 401;
+    return isAwsAuthenticationError(error);
   }
 
   async createIntegration(creationParams: AwsSsoIntegrationCreationParams, _integrationId?: string): Promise<void> {
@@ -240,10 +241,27 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     this.behaviouralNotifier.setIntegrations([...this.repository.listAwsSsoIntegrations(), ...this.repository.listAzureIntegrations()]);
   }
 
-  async getAccessToken(integrationId: string, region: string, portalUrl: string, forceRefresh: boolean = false): Promise<string> {
+  async getAccessToken(
+    integrationId: string,
+    region: string,
+    portalUrl: string,
+    forceRefresh: boolean = false,
+    interactive: boolean = true
+  ): Promise<string> {
     const isAwsSsoAccessTokenExpired = await this.isAwsSsoAccessTokenExpired(integrationId);
 
     if (isAwsSsoAccessTokenExpired || forceRefresh) {
+      if (!interactive) {
+        // Unattended callers (background rotation) must never pop a login window: the user may be
+        // away and the device-code window would expire. Fail here; re-login is an explicit action.
+        const alias = this.repository.getAwsSsoIntegration(integrationId)?.alias ?? integrationId;
+        throw new LoggedException(
+          `AWS SSO integration "${alias}" is disconnected: login from the integration panel to resume`,
+          this,
+          LogLevel.warn,
+          false
+        );
+      }
       const loginResponse = await this.login(integrationId, region, portalUrl);
       const integration: AwsSsoIntegration = this.repository.getAwsSsoIntegration(integrationId);
 
@@ -285,6 +303,41 @@ export class AwsSsoIntegrationService implements IIntegrationService {
   async isAwsSsoAccessTokenExpired(awsSsoIntegrationId: string): Promise<boolean> {
     const awsSsoAccessTokenInfo = await this.getAwsSsoIntegrationTokenInfo(awsSsoIntegrationId);
     return !awsSsoAccessTokenInfo.expiration || awsSsoAccessTokenInfo.expiration < this.getDate().getTime();
+  }
+
+  // Called on the background timer: when an integration's access token has just expired, stop its
+  // running sessions and mark it offline WITHOUT opening a login window (nobody may be at the
+  // keyboard — re-login must stay an explicit user action). Clearing accessTokenExpiration makes
+  // this one-shot per expiry. Purely local: no network calls, safe to run while offline.
+  // Returns the aliases of the integrations that were disconnected so the caller can notify the user.
+  async disconnectExpiredIntegrations(): Promise<string[]> {
+    const disconnectedAliases: string[] = [];
+    for (const integration of this.repository.listAwsSsoIntegrations()) {
+      if (!integration.accessTokenExpiration) {
+        continue;
+      }
+      if (new Date(integration.accessTokenExpiration).getTime() > this.getDate().getTime()) {
+        continue;
+      }
+
+      const sessions = this.repository.getAwsSsoIntegrationSessions(integration.id);
+      for (const session of sessions) {
+        if (session.status !== SessionStatus.inactive) {
+          await this.sessionFactory.getSessionService(session.type).stop(session.sessionId);
+        }
+      }
+
+      await this.keyChainService.deleteSecret(constants.appName, this.getIntegrationAccessTokenKey(integration.id));
+      this.repository.unsetAwsSsoIntegrationExpiration(integration.id);
+      integration.accessTokenExpiration = undefined;
+      await this.setOnline(integration, false);
+      disconnectedAliases.push(integration.alias);
+    }
+
+    if (disconnectedAliases.length > 0) {
+      this.behaviouralNotifier.setIntegrations([...this.repository.listAwsSsoIntegrations(), ...this.repository.listAzureIntegrations()]);
+    }
+    return disconnectedAliases;
   }
 
   async deleteIntegration(integrationId: string): Promise<void> {

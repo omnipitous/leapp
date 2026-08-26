@@ -41,6 +41,27 @@ and for tokens that AWS invalidates server-side. Root causes, all fixed in
    `ThrottleService` sleeps until its estimated slot instead of busy-polling every 1ms.
 6. **`setOnline(integration, false)` couldn't force offline** (`forcedState || isOnline` bug)
    and logout re-persisted the expiration it had just cleared. Both fixed.
+7. **Background rotation auto-opened the SSO login window and could wedge the whole app.**
+   Sessions are rotated by a 10-second timer; when the integration token had expired the rotation
+   silently popped a device-code login window with nobody at the keyboard. Two compounding bugs
+   made this fatal: the in-app verification window's promise only settled on a successful auth
+   POST (a timed-out device code or a network failure left it pending forever), and the OIDC
+   service's login mutex was only released on success — so every later login queued forever and
+   only force-killing Leapp recovered it. Fixed on three levels:
+   - **Rotation is now strictly non-interactive** (`generateCredentials(sessionId, interactive)`
+     threaded through `AwsSessionService.rotate`, chained roles included). If credentials can't be
+     refreshed without a login, the rotation fails instead of prompting.
+   - **Expired integrations are disconnected visibly**: every timer tick,
+     `AwsSsoIntegrationService.disconnectExpiredIntegrations()` stops the sessions of any
+     integration whose token expired, marks it offline, and the app shows one toast per
+     integration ("login has expired: its sessions were stopped"). Re-login is always an explicit
+     user action from the integration panel. A token revoked server-side (still valid on the local
+     clock) is caught by the rotation's auth-error path, which expires the integration locally so
+     the next tick disconnects it the same way.
+   - **A login can no longer hang forever**: the verification window promise always settles
+     (device-code lifetime deadline, user closing the window, or a request error), the OIDC
+     `login()` releases its mutex and fails queued waiters on *any* error, and the whole
+     verification phase has a deadline in core as a second layer of defense.
 
 ## UX changes
 
@@ -48,6 +69,13 @@ and for tokens that AWS invalidates server-side. Root causes, all fixed in
   ("retrieving account list", "found N accounts", "fetched X of N", "applying session
   changes X/Y") through `behaviouralNotifier.setFetchingIntegrations`; the app renders them
   in `app.component.html`. Upstream emitted these events but never rendered them anywhere.
+- **Session-expiry is announced, not auto-fixed**: when an SSO token expires, sessions stop
+  visibly and a toast says which integration needs a re-login. The app never opens a login
+  window on its own (see fix 7 above).
+- **The login code modal is gone**: the SSO user code was shown twice (a modal dialog *and* a
+  toast) on every login. Only the toast remains; the AWS page itself displays the code too.
+  (`AppVerificationWindowService`; the unused `AuthorizationDialogComponent` is still in the
+  codebase if it's ever wanted back.)
 - **Leapp Pro/Team widget removed** from the sidebar: the paid cloud service it reported on
   no longer exists, so it permanently displayed "Not active" like an error. Restore
   `<app-sync-pro-widget>` in `side-bar.component.html` if it's ever relevant again.

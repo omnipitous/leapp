@@ -99,11 +99,11 @@ export class AwsIamRoleChainedService extends AwsSessionService {
     return await this.fileService.replaceWriteSync(this.awsCoreService.awsCredentialPath(), credentialsFile);
   }
 
-  generateCredentialsProxy(sessionId: string): Promise<CredentialsInfo> {
-    return this.generateCredentials(sessionId);
+  generateCredentialsProxy(sessionId: string, interactive: boolean = true): Promise<CredentialsInfo> {
+    return this.generateCredentials(sessionId, interactive);
   }
 
-  async generateCredentials(sessionId: string): Promise<CredentialsInfo> {
+  async generateCredentials(sessionId: string, interactive: boolean = true): Promise<CredentialsInfo> {
     // Retrieve Session
     const session = this.repository.getSessionById(sessionId);
 
@@ -115,9 +115,10 @@ export class AwsIamRoleChainedService extends AwsSessionService {
       throw new LeappNotFoundError(this, `Parent Account Session  not found for Chained Account ${session.sessionName}`);
     }
 
-    // Generate a credential set from Parent Session
+    // Generate a credential set from Parent Session (thread interactivity through so a chained
+    // session rotating in the background can't trigger the parent's interactive SSO login)
     const parentSessionService = this.parentSessionServiceFactory.getSessionService(parentSession.type);
-    const parentCredentialsInfo = await parentSessionService.generateCredentialsProxy(parentSession.sessionId);
+    const parentCredentialsInfo = await parentSessionService.generateCredentialsProxy(parentSession.sessionId, interactive);
 
     const parentCredentials = {
       ["sessionToken"]: parentCredentialsInfo.sessionToken.aws_session_token,

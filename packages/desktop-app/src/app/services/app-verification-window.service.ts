@@ -20,13 +20,10 @@ export class AppVerificationWindowService implements IAwsSsoOidcVerificationWind
     windowModality: string,
     onWindowClose: () => void
   ): Promise<VerificationResponse> {
-    if (startDeviceAuthorizationResponse.verificationUriComplete.indexOf("?user_code=") > -1) {
-      const code = startDeviceAuthorizationResponse.verificationUriComplete.split("?user_code=")[1];
-      this.windowService.authorizationDialog(code);
-    }
-
     const openWindowInApp = constants.inApp.toString();
 
+    // The code is shown as a toast only: the modal dialog that used to duplicate it forced an
+    // extra click on every login for information the toast (and the AWS page itself) already shows
     if (startDeviceAuthorizationResponse.verificationUriComplete.indexOf("?user_code=") > -1) {
       const code = startDeviceAuthorizationResponse.verificationUriComplete.split("?user_code=")[1];
       this.toasterService.toast(`Your AWS user code for this SSO request is: ${code}`, ToastLevel.info, "SSO Security Code");
@@ -54,12 +51,42 @@ export class AppVerificationWindowService implements IAwsSsoOidcVerificationWind
     );
 
     verificationWindow.loadURL(startDeviceAuthorizationResponse.verificationUriComplete);
-    verificationWindow.on("close", (e) => {
-      e.preventDefault();
-      onWindowClose();
-    });
 
     return new Promise((resolve, reject) => {
+      // This promise MUST always settle: a login left pending forever holds the OIDC login mutex
+      // and every later login (manual or not) queues behind it until the app is force-killed
+      let settled = false;
+      let deadlineId: any = null;
+      const settle = (finalize: () => void, destroyWindow: boolean) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(deadlineId);
+        if (destroyWindow) {
+          try {
+            // destroy() skips the "close" handler below, so a programmatic teardown never
+            // runs the abort path (which stops sessions via onWindowClose)
+            verificationWindow.destroy();
+          } catch (e) {}
+        }
+        finalize();
+      };
+
+      // The device code has a fixed lifetime; once it elapses the AWS page can only display an
+      // error and nothing would ever settle this promise. Close the window and fail the login.
+      const deviceCodeLifetimeSeconds = startDeviceAuthorizationResponse.expiresIn || 600;
+      deadlineId = setTimeout(() => {
+        settle(() => reject("AWS SSO login window expired before authentication was completed. Please retry the login."), true);
+      }, deviceCodeLifetimeSeconds * 1000);
+
+      // The user closing the window aborts the login: notify listeners and settle the promise
+      // (the window is allowed to actually close; it used to be kept alive by preventDefault)
+      verificationWindow.on("close", () => {
+        onWindowClose();
+        settle(() => reject("AWS SSO login window was closed before authentication was completed."), false);
+      });
+
       // When the code is verified and the user has been logged in, the window can be closed
       verificationWindow.webContents.session.webRequest.onCompleted(
         {
@@ -67,14 +94,12 @@ export class AppVerificationWindowService implements IAwsSsoOidcVerificationWind
         },
         (details, callback) => {
           if (details.method === "POST" && details.statusCode === 200) {
-            verificationWindow.close();
-
             const verificationResponse: VerificationResponse = {
               clientId: registerClientResponse.clientId,
               clientSecret: registerClientResponse.clientSecret,
               deviceCode: startDeviceAuthorizationResponse.deviceCode,
             };
-            resolve(verificationResponse);
+            settle(() => resolve(verificationResponse), true);
           }
 
           callback({
@@ -91,10 +116,7 @@ export class AppVerificationWindowService implements IAwsSsoOidcVerificationWind
           details.error.indexOf("net::ERR_CACHE_MISS") < 0 &&
           details.error.indexOf("net::ERR_CONNECTION_REFUSED") < 0
         ) {
-          if (verificationWindow) {
-            verificationWindow.close();
-          }
-          reject(details.error.toString());
+          settle(() => reject(details.error.toString()), true);
         }
       });
     });

@@ -139,7 +139,8 @@ describe("AwsSessionService", () => {
 
     expect(sessionLoading).toHaveBeenCalledWith("sessionId");
     expect(sessionActivated).toHaveBeenCalledWith("sessionId");
-    expect(generateCredentials).toHaveBeenCalledWith("sessionId");
+    // rotation is unattended: credentials must be generated non-interactively (no login prompts)
+    expect(generateCredentials).toHaveBeenCalledWith("sessionId", false);
     expect(applyCredentials).toHaveBeenCalledWith("sessionId", credentialsInfo);
   });
 

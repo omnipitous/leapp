@@ -14,6 +14,7 @@ import { SessionType } from "../../../models/session-type";
 import { Session } from "../../../models/session";
 import { IKeychainService } from "../../../interfaces/i-keychain-service";
 import { LoggedException, LogLevel } from "../../log-service";
+import { isAwsAuthenticationError } from "../../aws-auth-error";
 import { CreateSessionRequest } from "../create-session-request";
 import { GetRoleCredentialsResponse } from "@aws-sdk/client-sso";
 
@@ -138,23 +139,32 @@ export class AwsSsoRoleService extends AwsSessionService implements BrowserWindo
     await this.fileService.replaceWriteSync(this.awsCoreService.awsCredentialPath(), credentialsFile);
   }
 
-  generateCredentialsProxy(sessionId: string): Promise<CredentialsInfo> {
-    return this.generateCredentials(sessionId);
+  generateCredentialsProxy(sessionId: string, interactive: boolean = true): Promise<CredentialsInfo> {
+    return this.generateCredentials(sessionId, interactive);
   }
 
-  async generateCredentials(sessionId: string): Promise<CredentialsInfo> {
+  async generateCredentials(sessionId: string, interactive: boolean = true): Promise<CredentialsInfo> {
     const session: AwsSsoRoleSession = this.repository.getSessionById(sessionId) as AwsSsoRoleSession;
     const awsSsoConfiguration = this.repository.getAwsSsoIntegration(session.awsSsoConfigurationId);
     const region = awsSsoConfiguration.region;
     const portalUrl = awsSsoConfiguration.portalUrl;
     const roleArn = session.roleArn;
 
-    let accessToken = await this.awsIntegrationDelegate.getAccessToken(session.awsSsoConfigurationId, region, portalUrl);
+    let accessToken = await this.awsIntegrationDelegate.getAccessToken(session.awsSsoConfigurationId, region, portalUrl, false, interactive);
     let credentials;
 
     try {
       credentials = await this.awsIntegrationDelegate.getRoleCredentials(accessToken, region, roleArn);
     } catch (err) {
+      if (!interactive) {
+        // The forced token refresh below would open a login window; instead, if AWS rejected the
+        // token server-side, expire the integration locally so the next timer tick disconnects it
+        // visibly and notifies the user
+        if (isAwsAuthenticationError(err)) {
+          this.repository.unsetAwsSsoIntegrationExpiration(session.awsSsoConfigurationId);
+        }
+        throw err;
+      }
       accessToken = await this.awsIntegrationDelegate.getAccessToken(session.awsSsoConfigurationId, region, portalUrl, true);
       credentials = await this.awsIntegrationDelegate.getRoleCredentials(accessToken, region, roleArn);
     }
